@@ -11,8 +11,8 @@ local dir = require("luarocks.dir")
 local util = require("luarocks.util")
 local path = require("luarocks.path")
 
-local socket_ok, zip_ok, unzip_ok, lfs_ok, md5_ok, posix_ok, _
-local http, ftp, lrzip, luazip, lfs, md5, posix
+local socket_ok, zip_ok, unzip_ok, lfs_ok, md5_ok, posix_ok, copas_ok, _
+local http, ftp, lrzip, luazip, lfs, md5, posix, copas_http
 
 if cfg.fs_use_modules then
    socket_ok, http = pcall(require, "socket.http")
@@ -22,6 +22,7 @@ if cfg.fs_use_modules then
    lfs_ok, lfs = pcall(require, "lfs")
    md5_ok, md5 = pcall(require, "md5")
    posix_ok, posix = pcall(require, "posix")
+   copas_ok, copas_http = pcall(require, "copas.http")
 end
 
 local patch = require("luarocks.tools.patch")
@@ -553,36 +554,45 @@ local function request(url, method, http, loop_control)
    if proxy and not proxy:find("://") then
       proxy = "http://" .. proxy
    end
-   
-   if cfg.show_downloads then
-      io.write(method.." "..url.." ...\n")
+
+   if copas_ok then
+      http = copas_http
+      io.stderr:write(url.." ... ")
    end
-   local dots = 0
    if cfg.connection_timeout and cfg.connection_timeout > 0 then
       http.TIMEOUT = cfg.connection_timeout
    end
-   local res, status, headers, err = http.request {
-      url = url,
-      proxy = proxy,
-      method = method,
-      redirect = false,
-      sink = ltn12.sink.table(result),
-      step = cfg.show_downloads and function(...)
-         io.write(".")
-         io.flush()
-         dots = dots + 1
-         if dots == 70 then
-            io.write("\n")
-            dots = 0
+   local res, status, headers, err
+   local done = false
+   local function perform()
+      res, status, headers, err = http.request {
+         url = url,
+         proxy = proxy,
+         method = method,
+         redirect = false,
+         sink = ltn12.sink.table(result),
+         headers = {
+            ["user-agent"] = cfg.user_agent.." via LuaSocket"
+         },
+      }
+      done = true
+   end
+   if copas_ok then
+      copas.addthread(function()
+         local spin = { "/", "-", "\\", "|" }
+         local i = 0
+         while not done do
+            io.stderr:write(spin[i + 1])
+            i = (i + 1) % 4
+            copas.sleep(0.05)
+            io.stderr:write("\8")
          end
-         return ltn12.pump.step(...)
-      end,
-      headers = {
-         ["user-agent"] = cfg.user_agent.." via LuaSocket"
-      },
-   }
-   if cfg.show_downloads then
-      io.write("\n")
+         io.stderr:write(" \n")
+      end)
+      copas.addthread(perform)
+      copas.loop()
+   else
+      perform()
    end
    if not res then
       return nil, status
