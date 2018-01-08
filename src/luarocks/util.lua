@@ -348,8 +348,7 @@ function util.this_program(default)
    return last:sub(2)
 end
 
-function util.deps_mode_help(program)
-   local cfg = require("luarocks.core.cfg")
+function util.deps_mode_help(program, deps_mode)
    return [[
 --deps-mode=<mode>  How to handle dependencies. Four modes are supported:
                     * all - use all trees from the rocks_trees list
@@ -361,7 +360,7 @@ function util.deps_mode_help(program)
                     * none - ignore dependencies altogether.
                     The default mode may be set with the deps_mode entry
                     in the configuration file.
-                    The current default is "]]..cfg.deps_mode..[[".
+                    The current default is "]]..deps_mode..[[".
                     Type ']]..util.this_program(program or "luarocks")..[[' with no arguments to see
                     your list of rocks trees.
 ]]

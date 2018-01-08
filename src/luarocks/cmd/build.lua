@@ -37,7 +37,7 @@ or the name of a rock to be fetched from a repository.
 
 --only-deps         Installs only the dependencies of the rock.
 
-]]..util.deps_mode_help()
+]]..util.deps_mode_help(nil, cfg.deps_mode)
 
 --- Build and install a rock.
 -- @param rock_file string: local or remote filename of a rock.

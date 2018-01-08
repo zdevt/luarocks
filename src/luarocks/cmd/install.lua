@@ -27,7 +27,7 @@ or a filename of a locally available rock.
                     in the configuration file.
 
 --only-deps         Installs only the dependencies of the rock.
-]]..util.deps_mode_help()
+]]..util.deps_mode_help(nil, cfg.deps_mode)
 
 
 --- Install a binary rock.
