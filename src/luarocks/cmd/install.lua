@@ -94,7 +94,7 @@ function install.install_binary_rock(rock_file, deps_mode)
    ok, err = repos.run_hook(rockspec, "post_install")
    if err then return nil, err end
 
-   util.announce_install(rockspec)
+   util.announce_install(rockspec, cfg.rocks_dir)
    util.remove_scheduled_function(rollback)
    return name, version
 end

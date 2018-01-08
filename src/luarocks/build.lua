@@ -330,7 +330,7 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
    ok, err = repos.run_hook(rockspec, "post_install")
    if err then return nil, err end
 
-   util.announce_install(rockspec)
+   util.announce_install(rockspec, cfg.rocks_dir)
    util.remove_scheduled_function(rollback)
    return name, version
 end

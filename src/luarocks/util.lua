@@ -370,8 +370,10 @@ function util.see_help(command, program)
    return "See '"..util.this_program(program or "luarocks")..' help'..(command and " "..command or "").."'."
 end
 
-function util.announce_install(rockspec)
-   local cfg = require("luarocks.core.cfg")
+--- Print in the output the announcement message that a rock was installed. 
+-- @param rockspec the rockspec table
+-- @param rocks_dir the rocks dir the rock was installed to
+function util.announce_install(rockspec, rocks_dir)
    local path = require("luarocks.path")
 
    local suffix = ""
@@ -379,7 +381,7 @@ function util.announce_install(rockspec)
       suffix = " (license: "..rockspec.description.license..")"
    end
 
-   local root_dir = path.root_dir(cfg.rocks_dir)
+   local root_dir = path.root_dir(rocks_dir)
    util.printout(rockspec.name.." "..rockspec.version.." is now installed in "..root_dir..suffix)
    util.printout()
 end
