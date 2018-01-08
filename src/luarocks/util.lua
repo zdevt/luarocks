@@ -212,24 +212,23 @@ end
 -- Overrides values of table with the contents of the appropriate
 -- subset of its "platforms" field. The "platforms" field should
 -- be a table containing subtables keyed with strings representing
--- platform names. Names that match the contents of the global
--- cfg.platforms setting are used. For example, if
--- cfg.platforms= {"foo"}, then the fields of
+-- platform names. Names that match the contents of the
+-- `platforms` argument are used. For example, if
+-- platforms= {"foo"}, then the fields of
 -- tbl.platforms.foo will overwrite those of tbl with the same
 -- names. For table values, the operation is performed recursively
 -- (tbl.platforms.foo.x.y.z overrides tbl.x.y.z; other contents of
 -- tbl.x are preserved).
 -- @param tbl table or nil: Table which may contain a "platforms" field;
+-- @param platforms array of currently enabled platform identifiers
 -- if it doesn't (or if nil is passed), this function does nothing.
-function util.platform_overrides(tbl)
+function util.platform_overrides(tbl, platforms)
    assert(type(tbl) == "table" or not tbl)
-   
-   local cfg = require("luarocks.core.cfg")
    
    if not tbl then return end
    
    if tbl.platforms then
-      for _, platform in ipairs(cfg.platforms) do
+      for _, platform in ipairs(platforms) do
          local platform_tbl = tbl.platforms[platform]
          if platform_tbl then
             core.deep_merge(tbl, platform_tbl)

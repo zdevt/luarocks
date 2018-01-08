@@ -213,11 +213,11 @@ function fetch.load_local_rockspec(filename, quick)
    
    rockspec.format_is_at_least = vers.format_is_at_least
 
-   util.platform_overrides(rockspec.build)
-   util.platform_overrides(rockspec.dependencies)
-   util.platform_overrides(rockspec.external_dependencies)
-   util.platform_overrides(rockspec.source)
-   util.platform_overrides(rockspec.hooks)
+   util.platform_overrides(rockspec.build, cfg.platforms)
+   util.platform_overrides(rockspec.dependencies, cfg.platforms)
+   util.platform_overrides(rockspec.external_dependencies, cfg.platforms)
+   util.platform_overrides(rockspec.source, cfg.platforms)
+   util.platform_overrides(rockspec.hooks, cfg.platforms)
 
    local basename = dir.base_name(filename)
    if basename == "rockspec" then
