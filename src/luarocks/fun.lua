@@ -2,16 +2,21 @@
 --- A set of basic functional utilities
 local fun = {}
 
+function fun.concat_in(rs, ys, n)
+   n = n or #rs
+   for i = 1, #ys do
+      rs[i + n] = ys[i]
+   end
+   return rs
+end
+
 function fun.concat(xs, ys)
    local rs = {}
    local n = #xs
    for i = 1, n do
       rs[i] = xs[i]
    end
-   for i = 1, #ys do
-      rs[i + n] = ys[i]
-   end
-   return rs
+   return fun.concat_in(rs, ys, n)
 end
 
 function fun.contains(xs, v)
