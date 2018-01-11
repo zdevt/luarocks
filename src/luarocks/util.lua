@@ -458,4 +458,32 @@ function util.LQ(s)
    return ("%q"):format(s)
 end
 
+--- Write an error message for a list, adjusting an intro sentence
+-- for singular and plural cases. The changing part of the intro
+-- sentence is wrapped in curly braces, and the list is entered
+-- with "%l". If the curly braces are split by a pipe, it contains
+-- singular and plural cases, if not, it contains the plural case
+-- only and singular is empty.
+-- Examples:
+-- util.format_list("variable{s}: %l", vars)
+-- util.format_list("Unknown {leaf|leaves}: %l", leaves)
+-- @param msg The format message, containing `{}` and `%l`
+-- (if `%l` is not given, it is assumed to be at the end of the string)
+-- @param list the list
+-- @return the output message
+function util.format_list(msg, list)
+   assert(type(msg) == "string")
+   assert(type(list) == "table")
+
+   local opt1, opt2 = msg:match("{([^|]*)|([^}]*)}")
+   if not opt1 then
+      opt1, opt2 = "", msg:match("{([^}]*)}")
+   end
+   if not msg:match("%%l") then
+      msg = msg .. "%l"
+   end
+   return msg:gsub("{[^}]*}", (#list == 1 and opt1 or opt2) or "")
+             :gsub("%%l", table.concat(list, ", "))
+end
+
 return util

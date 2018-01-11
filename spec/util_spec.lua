@@ -4,6 +4,21 @@ local run = test_env.run
 local testing_paths = test_env.testing_paths
 local env_variables = test_env.env_variables
 
+describe("#util #unit tests", function()
+   local util = require("luarocks.util")
+   
+   describe("format_list", function()
+      assert.same("test: foo", util.format_list("test{s}: ", {"foo"}))
+      assert.same("tests: foo, bar", util.format_list("test{s}: ", {"foo", "bar"}))
+      assert.same("tests: 1, 2, 3", util.format_list("test{s}: ", {1, 2, 3}))
+      assert.same("wat: foo", util.format_list("wat: ", {"foo"}))
+      assert.same("wat: foo, bar", util.format_list("wat: ", {"foo", "bar"}))
+      assert.same("Unknown leaf: foo", util.format_list("Unknown {leaf|leaves}: ", {"foo"}))
+      assert.same("Unknown leaves: foo, bar", util.format_list("Unknown {leaf|leaves}: ", {"foo", "bar"}))
+      assert.same("Unknown leaves: ", util.format_list("Unknown {leaf|leaves}: ", {}))
+   end)
+end)
+
 describe("Basic tests #blackbox #b_util", function()
 
    before_each(function()
