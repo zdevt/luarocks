@@ -1,6 +1,7 @@
 local type_manifest = {}
 
 local type_check = require("luarocks.type_check")
+local util = require("luarocks.util")
 
 local number_1 = type_check.number_1
 local string_1 = type_check.string_1
@@ -75,7 +76,11 @@ function type_manifest.check(manifest, globals)
    assert(type(manifest) == "table")
    local ok, err = type_check.check_undeclared_globals(globals, manifest_types)
    if not ok then return nil, err end
-   return type_check.type_check_table("1.0", manifest, manifest_types, "")
+   ok, err = type_check.type_check_table("1.0", manifest, manifest_types, "")
+   if type(err) == "table" then
+      return nil, util.format_list("Unknown field{s}: ", err)
+   end
+   return ok, err
 end
 
 return type_manifest

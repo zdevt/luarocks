@@ -115,8 +115,9 @@ rockspec_types.hooks.platforms._any = rockspec_types.hooks
 -- Verify the correctness of elements from a 
 -- rockspec table, reporting on unknown fields and type
 -- mismatches.
--- @return boolean or (nil, string): true if type checking
--- succeeded, or nil and an error message if it failed.
+-- @return (boolean, {string}) or (nil, string): true if type checking
+-- succeeded (and an array of unknown fields),
+-- or nil and an error message if it failed.
 function type_rockspec.check(rockspec, globals)
    assert(type(rockspec) == "table")
    if not rockspec.rockspec_format then

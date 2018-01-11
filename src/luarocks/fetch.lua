@@ -209,6 +209,11 @@ function fetch.load_local_rockspec(filename, quick)
       if not ok then
          return nil, filename..": "..err
       end
+      if not cfg.accept_unknown_fields then
+         if type(err) == "table" and next(err) then
+            return nil, "Unknown fields: "..table.concat(err, ", ")
+         end
+      end
    end
    
    rockspec.format_is_at_least = vers.format_is_at_least

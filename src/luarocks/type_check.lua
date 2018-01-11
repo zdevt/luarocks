@@ -1,9 +1,9 @@
 
 local type_check = {}
 
-local cfg = require("luarocks.core.cfg")
 local vers = require("luarocks.core.vers")
-local require = nil
+local fun = require("luarocks.fun")
+local util = require("luarocks.util")
 --------------------------------------------------------------------------------
 
 type_check.string_1 = { _type = "string" }
@@ -102,12 +102,14 @@ end
 -- @param context string: A string indicating the "context" where the
 -- error occurred (such as the name of the table the item is a part of),
 -- to be used by error messages.
--- @return boolean or (nil, string): true if type checking
--- succeeded, or nil and an error message if it failed.
+-- @return (boolean, { string }) or (nil, string)
+-- either true and an array of unknown fields,
+-- or nil and an error message if it failed.
 function type_check.type_check_table(version, tbl, typetbl, context)
    assert(type(version) == "string")
    assert(type(tbl) == "table")
    assert(type(typetbl) == "table")
+   local unknown_fields = {}
    
    local ok, err = check_version(version, typetbl, context)
    if not ok then
@@ -115,16 +117,18 @@ function type_check.type_check_table(version, tbl, typetbl, context)
    end
    
    for k, v in pairs(tbl) do
+      local ctxk = context.."."..k
       local t = typetbl[k] or typetbl._any
       if t then 
-         local ok, err = type_check_item(version, v, t, mkfield(context, k))
-         if not ok then return nil, err end
+         local ok, unk = type_check_item(version, v, t, mkfield(context, k))
+         if not ok then return nil, unk end
+         if type(unk) == "table" and next(unk) then
+            fun.concat_in(unknown_fields, fun.map(unk, function(f) return ctxk.."."..f end))
+         end
       elseif typetbl._more then
          -- Accept unknown field
       else
-         if not cfg.accept_unknown_fields then
-            return nil, "Unknown field "..k
-         end
+         table.insert(unknown_fields, ctxk)
       end
    end
    for k, v in pairs(typetbl) do
@@ -134,7 +138,7 @@ function type_check.type_check_table(version, tbl, typetbl, context)
          end
       end
    end
-   return true
+   return true, unknown_fields
 end
 
 function type_check.check_undeclared_globals(globals, typetbl)
@@ -144,10 +148,8 @@ function type_check.check_undeclared_globals(globals, typetbl)
          table.insert(undeclared, glob)
       end
    end
-   if #undeclared == 1 then
-      return nil, "Unknown variable: "..undeclared[1]
-   elseif #undeclared > 1 then
-      return nil, "Unknown variables: "..table.concat(undeclared, ", ")
+   if #undeclared > 0 then
+      return nil, util.format_list("Undeclared variable{s}: ", undeclared)
    end
    return true
 end
