@@ -40,7 +40,7 @@ end
 -- given, help summaries for all commands are shown.
 -- @return boolean or (nil, string): true if there were no errors
 -- or nil and an error message if an invalid command was requested.
-function help.command(flags, command)
+function help.show_help(command, program_description, commands)
    if not command then
       local conf = cfg.which_config()
       print_banner()
@@ -72,8 +72,8 @@ function help.command(flags, command)
 	Variables from the "variables" table of the configuration file
 	can be overriden with VAR=VALUE assignments.]])
       print_section("COMMANDS")
-      for name, command in util.sortedpairs(commands) do
-         local cmd = require(command)
+      for name, modname in util.sortedpairs(commands) do
+         local cmd = require(modname)
          util.printout("", name)
          util.printout("\t", cmd.help_summary)
       end

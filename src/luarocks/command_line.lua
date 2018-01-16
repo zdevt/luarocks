@@ -59,8 +59,10 @@ end
 -- to it any additional arguments passed by the user.
 -- Uses the global table "commands", which contains
 -- the loaded modules representing commands.
+-- @param program_description string: a description of the program
+-- @param commands table: a table of command modules
 -- @param ... string: Arguments given on the command-line.
-function command_line.run_command(...)
+function command_line.run_command(program_description, commands, ...)
    local args = {...}
    local cmdline_vars = {}
    for i = #args, 1, -1 do
@@ -79,6 +81,13 @@ function command_line.run_command(...)
    local flags = table.remove(nonflags, 1)
    if flags.ERROR then
       die(flags.ERROR.." See --help.")
+   end
+
+   if flags["version"] then
+      util.printout(program.." "..cfg.program_version)
+      util.printout(program_description)
+      util.printout()
+      os.exit(cfg.errorcodes.OK)
    end
    
    if flags["from"] then flags["server"] = flags["from"] end
@@ -106,13 +115,9 @@ function command_line.run_command(...)
          die "Argument error: --timeout expects a numeric argument."
       end
    end
-
-   if flags["version"] then
-      util.printout(program.." "..cfg.program_version)
-      util.printout(program_description)
-      util.printout()
-      os.exit(cfg.errorcodes.OK)
-   elseif flags["help"] or #nonflags == 0 then
+   
+   local command
+   if flags["help"] or #nonflags == 0 then
       command = "help"
    else
       command = table.remove(nonflags, 1)
@@ -197,10 +202,17 @@ function command_line.run_command(...)
       cfg.only_sources_from = flags["only-sources"]
    end
   
-   if command ~= "help" then
-      for k, v in pairs(cmdline_vars) do
-         cfg.variables[k] = v
+   if command == "help" then
+      local help = require(commands["help"])
+      local ok, err, exitcode = help.show_help(nonflags[1], program_description, commands)
+      if not ok then
+         die(err, exitcode)
       end
+      return true
+   end
+
+   for k, v in pairs(cmdline_vars) do
+      cfg.variables[k] = v
    end
 
    if (not fs.current_dir()) or fs.current_dir() == "" then

@@ -6,9 +6,9 @@ local cfg = require("luarocks.core.cfg")
 local loader = require("luarocks.loader")
 local command_line = require("luarocks.command_line")
 
-program_description = "LuaRocks main command-line interface"
+local program_description = "LuaRocks main command-line interface"
 
-commands = {
+local commands = {
    help = "luarocks.cmd.help",
    pack = "luarocks.cmd.pack",
    unpack = "luarocks.cmd.unpack",
@@ -31,4 +31,4 @@ commands = {
    which = "luarocks.cmd.which",
 }
 
-command_line.run_command(...)
+command_line.run_command(program_description, commands, ...)
