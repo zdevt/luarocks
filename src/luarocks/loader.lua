@@ -72,6 +72,20 @@ local function load_rocks_trees()
    return true
 end
 
+local function add_context_for_dependency(pkg, constraints)
+   for _, tree in ipairs(loader.rocks_trees) do
+      local entries = tree.manifest.repository[pkg]
+      if entries then
+         for ver, _ in util.sortedpairs(entries, vers.compare_versions) do
+            if (not constraints) or vers.match_constraints(vers.parse_version(ver), constraints) then
+               loader.add_context(pkg, ver)
+               return
+            end
+         end
+      end
+   end
+end
+
 --- Process the dependencies of a package to determine its dependency
 -- chain for loading modules.
 -- @param name string: The name of an installed rock.
@@ -98,26 +112,13 @@ function loader.add_context(name, version)
 
    for _, tree in ipairs(loader.rocks_trees) do
       local manifest = tree.manifest
-
-      local pkgdeps
       if manifest.dependencies and manifest.dependencies[name] then
-         pkgdeps = manifest.dependencies[name][version]
-      end
-      if not pkgdeps then
-         return nil
-      end
-      for _, dep in ipairs(pkgdeps) do
-         local pkg, constraints = dep.name, dep.constraints
-   
-         for _, tree in ipairs(loader.rocks_trees) do
-            local entries = tree.manifest.repository[pkg]
-            if entries then
-               for ver, pkgs in util.sortedpairs(entries, vers.compare_versions) do
-                  if (not constraints) or vers.match_constraints(vers.parse_version(ver), constraints) then
-                     loader.add_context(pkg, version)
-                  end
-               end
+         local pkgdeps = manifest.dependencies[name][version]
+         if pkgdeps then
+            for _, dep in ipairs(pkgdeps) do
+               add_context_for_dependency(dep.name, dep.constraints)
             end
+            break
          end
       end
    end
