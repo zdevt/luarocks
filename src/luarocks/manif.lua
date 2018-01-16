@@ -60,7 +60,7 @@ local function fetch_manifest_from(repo_url, filename)
    local url = dir.path(repo_url, filename)
    local name = repo_url:gsub("[/:]","_")
    local cache_dir = dir.path(cfg.local_cache, name)
-   local ok = fs.make_dir(cache_dir)
+   local ok = fs:make_dir(cache_dir)
    if not ok then
       return nil, "Failed creating temporary cache directory "..cache_dir
    end
@@ -99,7 +99,7 @@ function manif.load_manifest(repo_url, lua_version)
    if protocol == "file" then
       for _, filename in ipairs(filenames) do
          pathname = dir.path(repodir, filename)
-         if fs.exists(pathname) then
+         if fs:exists(pathname) then
             break
          end
       end
@@ -116,16 +116,16 @@ function manif.load_manifest(repo_url, lua_version)
       end
    end
    if pathname:match(".*%.zip$") then
-      pathname = fs.absolute_name(pathname)
+      pathname = fs:absolute_name(pathname)
       local dirname = dir.dir_name(pathname)
-      fs.change_dir(dirname)
+      fs:change_dir(dirname)
       local nozip = pathname:match("(.*)%.zip$")
-      fs.delete(nozip)
-      local ok = fs.unzip(pathname)
-      fs.pop_dir()
+      fs:delete(nozip)
+      local ok = fs:unzip(pathname)
+      fs:pop_dir()
       if not ok then
-         fs.delete(pathname)
-         fs.delete(pathname..".timestamp")
+         fs:delete(pathname)
+         fs:delete(pathname..".timestamp")
          return nil, "Failed extracting manifest file"
       end
       pathname = nozip

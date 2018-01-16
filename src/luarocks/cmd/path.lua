@@ -71,10 +71,10 @@ function path_cmd.command(flags)
       end
    end
 
-   util.printout(fs.export_cmd(lpath_var, util.cleanup_path(lr_path, ';', cfg.lua_version)))
-   util.printout(fs.export_cmd(lcpath_var, util.cleanup_path(lr_cpath, ';', cfg.lua_version)))
+   util.printout(fs:export_cmd(lpath_var, util.cleanup_path(lr_path, ';', cfg.lua_version)))
+   util.printout(fs:export_cmd(lcpath_var, util.cleanup_path(lr_cpath, ';', cfg.lua_version)))
    if flags["bin"] then
-      util.printout(fs.export_cmd("PATH", util.cleanup_path(lr_bin, path_sep)))
+      util.printout(fs:export_cmd("PATH", util.cleanup_path(lr_bin, path_sep)))
    end
    return true
 end

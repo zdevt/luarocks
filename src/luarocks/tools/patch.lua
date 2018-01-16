@@ -10,7 +10,6 @@
 
 local patch = {}
 
-local fs = require("luarocks.fs")
 local fun = require("luarocks.fun")
 
 local io = io
@@ -579,6 +578,8 @@ local function write_new_file(filename, hunk)
 end
 
 local function patch_file(source, target, epoch, hunks, strip, create_delete)
+  local fs = require("luarocks.fs")
+
   local create_file = false
   if create_delete then
     local is_src_epoch = epoch and #hunks == 1 and hunks[1].startsrc == 0 and hunks[1].linessrc == 0
@@ -588,13 +589,13 @@ local function patch_file(source, target, epoch, hunks, strip, create_delete)
     end
   end
   if create_file then
-    return write_new_file(fs.absolute_name(strip_dirs(target, strip)), hunks[1])
+    return write_new_file(fs:absolute_name(strip_dirs(target, strip)), hunks[1])
   end
   source = strip_dirs(source, strip)
   local f2patch = source
   if not exists(f2patch) then
     f2patch = strip_dirs(target, strip)
-    f2patch = fs.absolute_name(f2patch)
+    f2patch = fs:absolute_name(f2patch)
     if not exists(f2patch) then  --FIX:if f2patch nil
       warning(format("source/target file does not exist\n--- %s\n+++ %s",
               source, f2patch))

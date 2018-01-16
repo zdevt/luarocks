@@ -28,7 +28,7 @@ local function make_pass(make_cmd, pass, target, variables)
       table.insert(assignments, k.."="..v)
    end
    if pass then
-      return fs.execute(make_cmd.." "..target, unpack(assignments))
+      return fs:execute(make_cmd.." "..target, unpack(assignments))
    else
       return true
    end

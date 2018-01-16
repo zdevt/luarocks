@@ -60,10 +60,10 @@ local function build_rock(rock_file, need_to_fetch, deps_mode, build_only_deps)
       return nil, err, errcode
    end
    local rockspec_file = path.rockspec_name_from_rock(rock_file)
-   ok, err = fs.change_dir(unpack_dir)
+   ok, err = fs:change_dir(unpack_dir)
    if not ok then return nil, err end
    ok, err, errcode = build.build_rockspec(rockspec_file, need_to_fetch, false, deps_mode, build_only_deps)
-   fs.pop_dir()
+   fs:pop_dir()
    return ok, err, errcode
 end
  

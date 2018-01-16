@@ -126,7 +126,7 @@ local function zipwriter_add(self, file)
    if not ok then
       err = "error in opening "..file.." in zipfile"
    else
-      fin = io.open(fs.absolute_name(file), "rb")
+      fin = io.open(fs:absolute_name(file), "rb")
       if not fin then
          ok = false
          err = "error opening "..file.." for reading"
@@ -209,7 +209,7 @@ function zip.new_zipwriter(name)
    
    local zw = {}
   
-   zw.ziphandle = io.open(fs.absolute_name(name), "wb")
+   zw.ziphandle = io.open(fs:absolute_name(name), "wb")
    if not zw.ziphandle then
       return nil
    end
@@ -239,10 +239,10 @@ function zip.zip(zipfile, ...)
 
    local ok, err
    for _, file in pairs({...}) do
-      if fs.is_dir(file) then
-         for _, entry in pairs(fs.find(file)) do
+      if fs:is_dir(file) then
+         for _, entry in pairs(fs:find(file)) do
             local fullname = dir.path(file, entry)
-            if fs.is_file(fullname) then
+            if fs:is_file(fullname) then
                ok, err = zw:add(fullname)
                if not ok then break end
             end

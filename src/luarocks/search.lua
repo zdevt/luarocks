@@ -125,14 +125,14 @@ function search.disk_search(repo, query, results)
    end
    query_arch_as_table(query)
    
-   for name in fs.dir(repo) do
+   for name in fs:dir(repo) do
       local pathname = dir.path(repo, name)
       local rname, rversion, rarch = path.parse_name(name)
 
       if rname and (pathname:match(".rockspec$") or pathname:match(".rock$")) then
          store_if_match(results, repo, rname, rversion, rarch, query)
-      elseif fs.is_dir(pathname) then
-         for version in fs.dir(pathname) do
+      elseif fs:is_dir(pathname) then
+         for version in fs:dir(pathname) do
             if version:match("-%d+$") then
                store_if_match(results, repo, name, version, "installed", query)
             end

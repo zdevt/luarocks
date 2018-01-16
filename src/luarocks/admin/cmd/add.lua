@@ -26,8 +26,8 @@ local function zip_manifests()
    for ver in util.lua_versions() do
       local file = "manifest-"..ver
       local zip = file..".zip"
-      fs.delete(dir.path(fs.current_dir(), zip))
-      fs.zip(zip, file)
+      fs:delete(dir.path(fs:current_dir(), zip))
+      fs:zip(zip, file)
    end
 end
 
@@ -38,7 +38,7 @@ local function add_files_to_server(refresh, rockfiles, server, upload_server)
    assert(type(upload_server) == "table" or not upload_server)
    
    local download_url, login_url = cache.get_server_urls(server, upload_server)
-   local at = fs.current_dir()
+   local at = fs:current_dir()
    local refresh_fn = refresh and cache.refresh_local_cache or cache.split_server_url
    
    local local_cache, protocol, server_path, user, password = refresh_fn(server, download_url, cfg.upload_user, cfg.upload_password)
@@ -53,15 +53,15 @@ local function add_files_to_server(refresh, rockfiles, server, upload_server)
       login_url = protocol.."://"..server_path
    end
    
-   local ok, err = fs.change_dir(at)
+   local ok, err = fs:change_dir(at)
    if not ok then return nil, err end
    
    local files = {}
    for _, rockfile in ipairs(rockfiles) do
-      if fs.exists(rockfile) then
+      if fs:exists(rockfile) then
          util.printout("Copying file "..rockfile.." to "..local_cache.."...")
-         local absolute = fs.absolute_name(rockfile)
-         fs.copy(absolute, local_cache, cfg.perm_read)
+         local absolute = fs:absolute_name(rockfile)
+         fs:copy(absolute, local_cache, cfg.perm_read)
          table.insert(files, dir.base_name(absolute))
       else
          util.printerr("File "..rockfile.." not found")
@@ -71,7 +71,7 @@ local function add_files_to_server(refresh, rockfiles, server, upload_server)
       return nil, "No files found"
    end
 
-   local ok, err = fs.change_dir(local_cache)
+   local ok, err = fs:change_dir(local_cache)
    if not ok then return nil, err end
 
    util.printout("Updating manifest...")
@@ -110,7 +110,7 @@ local function add_files_to_server(refresh, rockfiles, server, upload_server)
    end
 
    util.printout(cmd)
-   fs.execute(cmd)
+   fs:execute(cmd)
 
    return true
 end

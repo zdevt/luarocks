@@ -42,7 +42,7 @@ function make_manifest.command(flags, repo)
    end
    if flags["local-tree"] then
       for luaver in util.lua_versions() do
-         fs.delete(dir.path(repo, "manifest-"..luaver))
+         fs:delete(dir.path(repo, "manifest-"..luaver))
       end
    end
    return ok, err

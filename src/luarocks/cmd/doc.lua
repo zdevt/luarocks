@@ -30,23 +30,23 @@ local function show_homepage(homepage, name, version)
       return nil, "No 'homepage' field in rockspec for "..name.." "..version
    end
    util.printout("Opening "..homepage.." ...")
-   fs.browser(homepage)
+   fs:browser(homepage)
    return true
 end
 
 local function try_to_open_homepage(name, version)
-   local temp_dir, err = fs.make_temp_dir("doc-"..name.."-"..(version or ""))
+   local temp_dir, err = fs:make_temp_dir("doc-"..name.."-"..(version or ""))
    if not temp_dir then
       return nil, "Failed creating temporary directory: "..err
    end
-   util.schedule_function(fs.delete, temp_dir)
-   local ok, err = fs.change_dir(temp_dir)
+   util.schedule_function(function(...) fs:delete(...) end, temp_dir)
+   local ok, err = fs:change_dir(temp_dir)
    if not ok then return nil, err end
    local filename, err = download.download("rockspec", name, version)
    if not filename then return nil, err end
    local rockspec, err = fetch.load_local_rockspec(filename)
    if not rockspec then return nil, err end
-   fs.pop_dir()
+   fs:pop_dir()
    local descript = rockspec.description or {}
    if not descript.homepage then return nil, "No homepage defined for "..name end
    return show_homepage(descript.homepage, name, version)
@@ -84,7 +84,7 @@ function doc.command(flags, name, version)
    local directories = { "doc", "docs" }
    for _, d in ipairs(directories) do
       local dirname = dir.path(directory, d)
-      if fs.is_dir(dirname) then
+      if fs:is_dir(dirname) then
          docdir = dirname
          break
       end
@@ -92,14 +92,14 @@ function doc.command(flags, name, version)
    if not docdir then
       if descript.homepage and not flags["list"] then
          util.printout("Local documentation directory not found -- opening "..descript.homepage.." ...")
-         fs.browser(descript.homepage)
+         fs:browser(descript.homepage)
          return true
       end
       return nil, "Documentation directory not found for "..name.." "..version
    end
 
    docdir = dir.normalize(docdir):gsub("/+", "/")
-   local files = fs.find(docdir)
+   local files = fs:find(docdir)
    local htmlpatt = "%.html?$"
    local extensions = { htmlpatt, "%.md$", "%.txt$",  "%.textile$", "" }
    local basenames = { "index", "readme", "manual" }
@@ -137,7 +137,7 @@ function doc.command(flags, name, version)
             util.printout()
             util.printout("Opening "..pathname.." ...")
             util.printout()
-            local ok = fs.browser(pathname)
+            local ok = fs:browser(pathname)
             if not ok and not pathname:match(htmlpatt) then
                local fd = io.open(pathname, "r")
                util.printout(fd:read("*a"))

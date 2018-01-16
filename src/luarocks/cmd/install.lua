@@ -73,8 +73,8 @@ function install.install_binary_rock(rock_file, deps_mode)
    end
    
    local rollback = util.schedule_function(function()
-      fs.delete(path.install_dir(name, version))
-      fs.remove_dir_if_empty(path.versions_dir(name))
+      fs:delete(path.install_dir(name, version))
+      fs:remove_dir_if_empty(path.versions_dir(name))
    end)
    
    local rockspec, err, ok
@@ -89,7 +89,7 @@ function install.install_binary_rock(rock_file, deps_mode)
    end
 
    -- For compatibility with .rock files built with LuaRocks 1
-   if not fs.exists(path.rock_manifest_file(name, version)) then
+   if not fs:exists(path.rock_manifest_file(name, version)) then
       ok, err = writer.make_rock_manifest(name, version)
       if not ok then return nil, err end
    end

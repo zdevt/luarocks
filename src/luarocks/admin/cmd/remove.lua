@@ -29,7 +29,7 @@ local function remove_files_from_server(refresh, rockfiles, server, upload_serve
    assert(type(upload_server) == "table" or not upload_server)
 
    local download_url = cache.get_server_urls(server, upload_server)
-   local at = fs.current_dir()
+   local at = fs:current_dir()
    local refresh_fn = refresh and cache.refresh_local_cache or cache.split_server_url
    
    local local_cache, protocol, server_path, user = refresh_fn(server, download_url, cfg.upload_user, cfg.upload_password)
@@ -40,7 +40,7 @@ local function remove_files_from_server(refresh, rockfiles, server, upload_serve
       return nil, "This command requires 'rsync', check your configuration."
    end
    
-   local ok, err = fs.change_dir(at)
+   local ok, err = fs:change_dir(at)
    if not ok then return nil, err end
    
    local nr_files = 0
@@ -48,8 +48,8 @@ local function remove_files_from_server(refresh, rockfiles, server, upload_serve
       local basename = dir.base_name(rockfile)
       local file = dir.path(local_cache, basename)
       util.printout("Removing file "..file.."...")
-      fs.delete(file)
-      if not fs.exists(file) then
+      fs:delete(file)
+      if not fs:exists(file) then
          nr_files = nr_files + 1
       else
          util.printerr("Failed removing "..file)
@@ -59,7 +59,7 @@ local function remove_files_from_server(refresh, rockfiles, server, upload_serve
       return nil, "No files removed."
    end
 
-   local ok, err = fs.change_dir(local_cache)
+   local ok, err = fs:change_dir(local_cache)
    if not ok then return nil, err end
 
    util.printout("Updating manifest...")
@@ -71,7 +71,7 @@ local function remove_files_from_server(refresh, rockfiles, server, upload_serve
    local cmd = cfg.variables.RSYNC.." "..cfg.variables.RSYNCFLAGS.." --delete -e ssh "..local_cache.."/ "..user.."@"..srv..":"..path.."/"
 
    util.printout(cmd)
-   fs.execute(cmd)
+   fs:execute(cmd)
 
    return true
 end

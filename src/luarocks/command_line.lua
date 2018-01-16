@@ -8,8 +8,8 @@ local util = require("luarocks.util")
 local cfg = require("luarocks.core.cfg")
 local path = require("luarocks.path")
 local dir = require("luarocks.dir")
-local deps = require("luarocks.deps")
-local fs = require("luarocks.fs")
+local fs
+local fs_init = require("luarocks.fs_init")
 local fun = require("luarocks.fun")
 
 local program = util.this_program("luarocks")
@@ -42,9 +42,9 @@ local function replace_tree(flags, tree)
 end
 
 local function is_ownership_ok(directory)
-   local me = fs.current_user()
+   local me = fs:current_user()
    for _ = 1,3 do -- try up to grandparent
-      local owner = fs.attributes(directory, "owner")
+      local owner = fs:attributes(directory, "owner")
       if owner then
          return owner == me
       end
@@ -67,22 +67,22 @@ local function check_command_permissions(flags)
    local ok = true
    local err = ""
    for _, directory in ipairs { cfg.rocks_dir, cfg.deploy_lua_dir, cfg.deploy_bin_dir, cfg.deploy_lua_dir } do
-      if fs.exists(directory) then
-         if not fs.is_writable(directory) then
+      if fs:exists(directory) then
+         if not fs:is_writable(directory) then
             ok = false
             err = "Your user does not have write permissions in " .. directory
             break
          end
       else
-         local root = fs.root_of(directory)
+         local root = fs:root_of(directory)
          local parent = directory
          repeat
             parent = dir.dir_name(parent)
             if parent == "" then
                parent = root
             end
-         until parent == root or fs.exists(parent)
-         if not fs.is_writable(parent) then
+         until parent == root or fs:exists(parent)
+         if not fs:is_writable(parent) then
             ok = false
             err = directory.." does not exist and your user does not have write permissions in " .. parent
             break
@@ -149,11 +149,9 @@ function command_line.run_command(program_description, commands, ...)
    cfg.flags = flags
 
    local command
-   
-   if flags["verbose"] then   -- setting it in the config file will kick-in earlier in the process
-      cfg.verbose = true
-      fs.verbose()
-   end
+
+   fs = fs_init.new(cfg.platforms, flags["verbose"], cfg.fs_use_modules)
+   package.loaded["luarocks.fs"] = fs
 
    if flags["timeout"] then   -- setting it in the config file will kick-in earlier in the process
       local timeout = tonumber(flags["timeout"])
@@ -164,7 +162,6 @@ function command_line.run_command(program_description, commands, ...)
       end
    end
    
-   local command
    if flags["help"] or #nonflags == 0 then
       command = "help"
    else
@@ -176,8 +173,11 @@ function command_line.run_command(program_description, commands, ...)
       flags["local"] = true
    end
 
-   if flags["deps-mode"] and not deps.check_deps_mode_flag(flags["deps-mode"]) then
-      die("Invalid entry for --deps-mode.")
+   if flags["deps-mode"] then
+      local deps = require("luarocks.deps")
+      if not deps.check_deps_mode_flag(flags["deps-mode"]) then
+         die("Invalid entry for --deps-mode.")
+      end
    end
    
    if flags["branch"] then
@@ -197,7 +197,7 @@ function command_line.run_command(program_description, commands, ...)
          end
       end
       if not named then
-         local root_dir = fs.absolute_name(flags["tree"])
+         local root_dir = fs:absolute_name(flags["tree"])
          replace_tree(flags, root_dir)
       end
    elseif flags["local"] then
@@ -249,21 +249,8 @@ function command_line.run_command(program_description, commands, ...)
    if flags["only-sources"] then
       cfg.only_sources_from = flags["only-sources"]
    end
-  
-   if command == "help" then
-      local help = require(commands["help"].module)
-      local ok, err, exitcode = help.show_help(nonflags[1], program_description, commands)
-      if not ok then
-         die(err, exitcode)
-      end
-      return true
-   end
 
-   for k, v in pairs(cmdline_vars) do
-      cfg.variables[k] = v
-   end
-
-   if (not fs.current_dir()) or fs.current_dir() == "" then
+   if (not fs:current_dir()) or fs:current_dir() == "" then
       die("Current directory does not exist. Please run LuaRocks from an existing directory.")
    end
 
@@ -274,8 +261,17 @@ function command_line.run_command(program_description, commands, ...)
                    (cfg.is_platform("unix")
                     and ("If executing "..util.this_program("luarocks").." with sudo, you may want sudo's -H flag.")
                     or ""))
-      cfg.local_cache = fs.make_temp_dir("local_cache")
-      util.schedule_function(fs.delete, cfg.local_cache)
+      cfg.local_cache = fs:make_temp_dir("local_cache")
+      util.schedule_function(function(...) fs:delete(...) end, cfg.local_cache)
+   end
+  
+   if command == "help" then
+      local help = require(commands["help"].module)
+      local ok, err, exitcode = help.show_help(nonflags[1], program_description, commands)
+      if not ok then
+         die(err, exitcode)
+      end
+      return true
    end
 
    if commands[command] then

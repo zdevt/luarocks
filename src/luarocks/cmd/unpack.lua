@@ -34,16 +34,16 @@ local function unpack_rockspec(rockspec_file, dir_name)
    if not rockspec then
       return nil, "Failed loading rockspec "..rockspec_file..": "..err
    end
-   local ok, err = fs.change_dir(dir_name)
+   local ok, err = fs:change_dir(dir_name)
    if not ok then return nil, err end
    local ok, sources_dir = fetch.fetch_sources(rockspec, true, ".")
    if not ok then
       return nil, sources_dir
    end
-   ok, err = fs.change_dir(sources_dir)
+   ok, err = fs:change_dir(sources_dir)
    if not ok then return nil, err end
    ok, err = build.apply_patches(rockspec)
-   fs.pop_dir()
+   fs:pop_dir()
    if not ok then return nil, err end
    return rockspec
 end
@@ -63,7 +63,7 @@ local function unpack_rock(rock_file, dir_name, kind)
    if not ok then
       return nil, "Failed unzipping rock "..rock_file, errcode
    end
-   ok, err = fs.change_dir(dir_name)
+   ok, err = fs:change_dir(dir_name)
    if not ok then return nil, err end
    local rockspec_file = dir_name..".rockspec"
    local rockspec, err = fetch.load_rockspec(rockspec_file)
@@ -72,14 +72,14 @@ local function unpack_rock(rock_file, dir_name, kind)
    end
    if kind == "src" then
       if rockspec.source.file then
-         local ok, err = fs.unpack_archive(rockspec.source.file)
+         local ok, err = fs:unpack_archive(rockspec.source.file)
          if not ok then
             return nil, err
          end
-         ok, err = fs.change_dir(rockspec.source.dir)
+         ok, err = fs:change_dir(rockspec.source.dir)
          if not ok then return nil, err end
          ok, err = build.apply_patches(rockspec)
-         fs.pop_dir()
+         fs:pop_dir()
          if not ok then return nil, err end
       end
    end
@@ -105,15 +105,15 @@ local function run_unpacker(file, force)
       return nil, file.." does not seem to be a valid filename."
    end
 
-   local exists = fs.exists(dir_name)
+   local exists = fs:exists(dir_name)
    if exists and not force then
       return nil, "Directory "..dir_name.." already exists."
    end
    if not exists then
-      local ok, err = fs.make_dir(dir_name)
+      local ok, err = fs:make_dir(dir_name)
       if not ok then return nil, err end
    end
-   local rollback = util.schedule_function(fs.delete, fs.absolute_name(dir_name))
+   local rollback = util.schedule_function(function(...) fs:delete(...) end, fs:absolute_name(dir_name))
 
    local rockspec, err
    if extension == "rock" then
@@ -126,7 +126,7 @@ local function run_unpacker(file, force)
    end
    if kind == "src" or kind == "rockspec" then
       if rockspec.source.dir ~= "." then
-         local ok = fs.copy(rockspec.local_filename, rockspec.source.dir, cfg.perm_read)
+         local ok = fs:copy(rockspec.local_filename, rockspec.source.dir, cfg.perm_read)
          if not ok then
             return nil, "Failed copying unpacked rockspec into unpacked source directory."
          end

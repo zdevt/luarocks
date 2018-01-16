@@ -35,9 +35,9 @@ function fetch.fetch_url(url, filename, cache)
 
    local protocol, pathname = dir.split_url(url)
    if protocol == "file" then
-      return fs.absolute_name(pathname)
+      return fs:absolute_name(pathname)
    elseif fetch.is_basic_protocol(protocol, true) then
-      local ok, name = fs.download(url, filename, cache)
+      local ok, name = fs:download(url, filename, cache)
       if not ok then
          return nil, "Failed downloading "..url..(filename and " - "..filename or ""), "network"
       end
@@ -66,21 +66,21 @@ function fetch.fetch_url_at_temp_dir(url, tmpname, filename)
 
    local protocol, pathname = dir.split_url(url)
    if protocol == "file" then
-      if fs.exists(pathname) then
-         return pathname, dir.dir_name(fs.absolute_name(pathname))
+      if fs:exists(pathname) then
+         return pathname, dir.dir_name(fs:absolute_name(pathname))
       else
          return nil, "File not found: "..pathname
       end
    else
-      local temp_dir, err = fs.make_temp_dir(tmpname)
+      local temp_dir, err = fs:make_temp_dir(tmpname)
       if not temp_dir then
          return nil, "Failed creating temporary directory "..tmpname..": "..err
       end
-      util.schedule_function(fs.delete, temp_dir)
-      local ok, err = fs.change_dir(temp_dir)
+      util.schedule_function(function(...) fs:delete(...) end, temp_dir)
+      local ok, err = fs:change_dir(temp_dir)
       if not ok then return nil, err end
       local file, err, errcode = fetch.fetch_url(url, filename)
-      fs.pop_dir()
+      fs:pop_dir()
       if not file then
          return nil, "Error fetching file: "..err, errcode
       end
@@ -101,20 +101,20 @@ end
 -- The inferred dir is returned first to avoid confusion with errors,
 -- because it is never nil.
 function fetch.find_base_dir(file, temp_dir, src_url, src_dir)
-   local ok, err = fs.change_dir(temp_dir)
+   local ok, err = fs:change_dir(temp_dir)
    if not ok then return nil, err end
-   fs.unpack_archive(file)
+   fs:unpack_archive(file)
    local inferred_dir = src_dir or fetch.url_to_base_dir(src_url)
    local found_dir = nil
-   if fs.exists(inferred_dir) then
+   if fs:exists(inferred_dir) then
       found_dir = inferred_dir
    else
       util.printerr("Directory "..inferred_dir.." not found")
-      local files = fs.list_dir()
+      local files = fs:list_dir()
       if files then
          table.sort(files)
          for i,filename in ipairs(files) do
-            if fs.is_dir(filename) then
+            if fs:is_dir(filename) then
                util.printerr("Found "..filename)
                found_dir = filename
                break
@@ -122,7 +122,7 @@ function fetch.find_base_dir(file, temp_dir, src_url, src_dir)
          end
       end
    end
-   fs.pop_dir()
+   fs:pop_dir()
    return inferred_dir, found_dir
 end
 
@@ -145,27 +145,27 @@ function fetch.fetch_and_unpack_rock(rock_url, dest)
       return nil, "Could not fetch rock file: " .. err, errcode
    end
 
-   rock_file = fs.absolute_name(rock_file)
+   rock_file = fs:absolute_name(rock_file)
    local unpack_dir
    if dest then
       unpack_dir = dest
-      local ok, err = fs.make_dir(unpack_dir)
+      local ok, err = fs:make_dir(unpack_dir)
       if not ok then
          return nil, "Failed unpacking rock file: " .. err
       end
    else
-      unpack_dir = fs.make_temp_dir(name)
+      unpack_dir = fs:make_temp_dir(name)
    end
    if not dest then
-      util.schedule_function(fs.delete, unpack_dir)
+      util.schedule_function(function(...) fs:delete(...) end, unpack_dir)
    end
-   local ok, err = fs.change_dir(unpack_dir)
+   local ok, err = fs:change_dir(unpack_dir)
    if not ok then return nil, err end
-   ok = fs.unzip(rock_file)
+   ok = fs:unzip(rock_file)
    if not ok then
       return nil, "Failed unpacking rock file: " .. rock_file
    end
-   fs.pop_dir()
+   fs:pop_dir()
    return unpack_dir
 end
 
@@ -188,7 +188,7 @@ end
 -- or nil followed by an error message.
 function fetch.load_local_rockspec(filename, quick)
    assert(type(filename) == "string")
-   filename = fs.absolute_name(filename)
+   filename = fs:absolute_name(filename)
    local rockspec, err = persist.load_into_table(filename)
    if not rockspec then
       return nil, "Could not load rockspec file "..filename.." ("..err..")"
@@ -308,10 +308,10 @@ function fetch.load_rockspec(filename, location)
    
    local err, errcode
    if location then
-      local ok, err = fs.change_dir(location)
+      local ok, err = fs:change_dir(location)
       if not ok then return nil, err end
       filename, err = fetch.fetch_url(filename)
-      fs.pop_dir()
+      fs:pop_dir()
    else
       filename, err, errcode = fetch.fetch_url_at_temp_dir(filename,"luarocks-rockspec-"..name)
    end
@@ -342,10 +342,10 @@ function fetch.get_sources(rockspec, extract, dest_dir)
    local source_file, store_dir
    local ok, err, errcode
    if dest_dir then
-      ok, err = fs.change_dir(dest_dir)
+      ok, err = fs:change_dir(dest_dir)
       if not ok then return nil, err, "dest_dir" end
       source_file, err, errcode = fetch.fetch_url(url, filename)
-      fs.pop_dir()
+      fs:pop_dir()
       store_dir = dest_dir
    else
       source_file, store_dir, errcode = fetch.fetch_url_at_temp_dir(url, "luarocks-source-"..name, filename)
@@ -354,16 +354,16 @@ function fetch.get_sources(rockspec, extract, dest_dir)
       return nil, err or store_dir, errcode
    end
    if rockspec.source.md5 then
-      if not fs.check_md5(source_file, rockspec.source.md5) then
+      if not fs:check_md5(source_file, rockspec.source.md5) then
          return nil, "MD5 check for "..filename.." has failed.", "md5"
       end
    end
    if extract then
-      local ok, err = fs.change_dir(store_dir)
+      local ok, err = fs:change_dir(store_dir)
       if not ok then return nil, err end
-      ok, err = fs.unpack_archive(rockspec.source.file)
+      ok, err = fs:unpack_archive(rockspec.source.file)
       if not ok then return nil, err end
-      if not fs.exists(rockspec.source.dir) then
+      if not fs:exists(rockspec.source.dir) then
 
          -- If rockspec.source.dir can't be found, see if we only have one
          -- directory in store_dir.  If that's the case, assume it's what
@@ -373,9 +373,9 @@ function fetch.get_sources(rockspec, extract, dest_dir)
          local file_count, found_dir = 0
 
          if not rockspec.source.dir_set and rockspec:format_is_at_least("3.0") then
-            for file in fs.dir() do
+            for file in fs:dir() do
                file_count = file_count + 1
-               if fs.is_dir(file) then
+               if fs:is_dir(file) then
                   found_dir = file
                end
             end
@@ -387,7 +387,7 @@ function fetch.get_sources(rockspec, extract, dest_dir)
             return nil, "Directory "..rockspec.source.dir.." not found inside archive "..rockspec.source.file, "source.dir", source_file, store_dir
          end
       end
-      fs.pop_dir()
+      fs:pop_dir()
    end
    return source_file, store_dir
 end

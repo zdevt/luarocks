@@ -77,7 +77,7 @@ function type_manifest.check(manifest, globals)
    local ok, err = type_check.check_undeclared_globals(globals, manifest_types)
    if not ok then return nil, err end
    ok, err = type_check.type_check_table("1.0", manifest, manifest_types, "")
-   if type(err) == "table" then
+   if not ok and type(err) == "table" then
       return nil, util.format_list("Unknown field{s}: ", err)
    end
    return ok, err

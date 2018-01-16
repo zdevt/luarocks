@@ -3,8 +3,6 @@
 -- used by this module.
 local win32 = {}
 
-local fs = require("luarocks.fs")
-
 local cfg = require("luarocks.core.cfg")
 local dir = require("luarocks.dir")
 local util = require("luarocks.util")
@@ -22,14 +20,14 @@ os.execute = function(cmd, ...) return _execute(_prefix..cmd, ...) end -- luache
 --- Annotate command string for quiet execution.
 -- @param cmd string: A command-line string.
 -- @return string: The command-line, with silencing annotation.
-function win32.quiet(cmd)
+function win32:quiet(cmd)
    return cmd.." 2> NUL 1> NUL"
 end
 
 --- Annotate command string for execution with quiet stderr.
 -- @param cmd string: A command-line string.
 -- @return string: The command-line, with stderr silencing annotation.
-function win32.quiet_stderr(cmd)
+function win32:quiet_stderr(cmd)
    return cmd.." 2> NUL"
 end
 
@@ -56,7 +54,7 @@ end
 -- Adds double quotes and escapes.
 -- @param arg string: Unquoted argument.
 -- @return string: Quoted argument.
-function win32.Q(arg)
+function win32:Q(arg)
    assert(type(arg) == "string")
    -- Use Windows-specific directory separator for paths.
    -- Paths should be converted to absolute by now.
@@ -78,7 +76,7 @@ end
 -- Adds double quotes and escapes.
 -- @param arg string: Unquoted argument.
 -- @return string: Quoted argument.
-function win32.Qb(arg)
+function win32:Qb(arg)
    assert(type(arg) == "string")
    -- Use Windows-specific directory separator for paths.
    -- Paths should be converted to absolute by now.
@@ -102,11 +100,11 @@ end
 -- pathname absolute, or the current dir in the dir stack if
 -- not given.
 -- @return string: The pathname converted to absolute.
-function win32.absolute_name(pathname, relative_to)
+function win32:absolute_name(pathname, relative_to)
    assert(type(pathname) == "string")
    assert(type(relative_to) == "string" or not relative_to)
 
-   relative_to = relative_to or fs.current_dir()
+   relative_to = relative_to or self:current_dir()
    local root, rest = split_root(pathname)
    if root:match("[\\/]$") then
       -- It's an absolute path already.
@@ -122,8 +120,8 @@ end
 -- For example, for "c:\hello", returns "c:\"
 -- @param pathname string: pathname to use.
 -- @return string: The root of the given pathname.
-function win32.root_of(pathname)
-   return (split_root(fs.absolute_name(pathname)))
+function win32:root_of(pathname)
+   return (split_root(self:absolute_name(pathname)))
 end
 
 --- Create a wrapper to make a script executable from the command-line.
@@ -133,12 +131,12 @@ end
 -- @param version string: rock version to be used in loader context.
 -- @return boolean or (nil, string): True if succeeded, or nil and
 -- an error message.
-function win32.wrap_script(file, dest, name, version)
+function win32:wrap_script(file, dest, name, version)
    assert(type(file) == "string")
    assert(type(dest) == "string")
 
    local base = dir.base_name(file)
-   local wrapname = fs.is_dir(dest) and dest.."/"..base or dest
+   local wrapname = self:is_dir(dest) and dest.."/"..base or dest
    wrapname = wrapname..".bat"
    local lpath, lcpath = cfg.package_paths()
    lpath = util.cleanup_path(lpath, ";", cfg.lua_version)
@@ -151,13 +149,13 @@ function win32.wrap_script(file, dest, name, version)
    local lua = dir.path(cfg.variables["LUA_BINDIR"], cfg.lua_interpreter)
    local ppaths = "package.path="..util.LQ(lpath..";").."..package.path; package.cpath="..util.LQ(lcpath..";").."..package.cpath"
    local addctx = "local k,l,_=pcall(require,"..util.LQ("luarocks.loader")..") _=k and l.add_context("..util.LQ(name)..","..util.LQ(version)..")"
-   wrapper:write(fs.Qb(lua)..' -e '..fs.Qb(ppaths)..' -e '..fs.Qb(addctx)..' '..fs.Qb(file)..' %*\n')
+   wrapper:write(self:Qb(lua)..' -e '..self:Qb(ppaths)..' -e '..self:Qb(addctx)..' '..self:Qb(file)..' %*\n')
    wrapper:write("exit /b %ERRORLEVEL%\n")
    wrapper:close()
    return true
 end
 
-function win32.is_actual_binary(name)
+function win32:is_actual_binary(name)
    name = name:lower()
    if name:match("%.bat$") or name:match("%.exe$") then
       return true
@@ -165,8 +163,8 @@ function win32.is_actual_binary(name)
    return false
 end
 
-function win32.copy_binary(filename, dest) 
-   local ok, err = fs.copy(filename, dest)
+function win32:copy_binary(filename, dest) 
+   local ok, err = self:copy(filename, dest)
    if not ok then
       return nil, err
    end
@@ -187,11 +185,11 @@ function win32.copy_binary(filename, dest)
    return true
 end
 
-function win32.chmod(filename, mode)
+function win32:chmod(filename, mode)
    return true
 end
 
-function win32.attributes(filename, attrtype)
+function win32:attributes(filename, attrtype)
    if attrtype == "permissions" then
       return "" -- FIXME
    elseif attrtype == "owner" then
@@ -211,7 +209,7 @@ end
 -- which will replace old_file.
 -- @return boolean or (nil, string): True if succeeded, or nil and
 -- an error message.
-function win32.replace_file(old_file, new_file)
+function win32:replace_file(old_file, new_file)
    os.remove(old_file)
    return os.rename(new_file, old_file)
 end
@@ -222,12 +220,12 @@ end
 -- for checking the result of subsequent operations.
 -- @param file string: filename to test
 -- @return boolean: true if file exists, false otherwise.
-function win32.is_writable(file)
+function win32:is_writable(file)
    assert(file)
    file = dir.normalize(file)
    local result
    local tmpname = 'tmpluarockstestwritable.deleteme'
-   if fs.is_dir(file) then
+   if self:is_dir(file) then
       local file2 = dir.path(file, tmpname)
       local fh = io.open(file2, 'wb')
       result = fh ~= nil
@@ -236,7 +234,7 @@ function win32.is_writable(file)
          -- the above test might give a false positive when writing to
          -- c:\program files\ because of VirtualStore redirection on Vista and up
          -- So check whether it's really there
-         result = fs.exists(file2)
+         result = self:exists(file2)
       end
       os.remove(file2)
    else
@@ -251,12 +249,12 @@ end
 -- @param name string: name pattern to use for avoiding conflicts
 -- when creating temporary directory.
 -- @return string or (nil, string): name of temporary directory or (nil, error message) on failure.
-function win32.make_temp_dir(name)
+function win32:make_temp_dir(name)
    assert(type(name) == "string")
    name = dir.normalize(name)
 
    local temp_dir = os.getenv("TMP") .. "/luarocks_" .. name:gsub("/", "_") .. "-" .. tostring(math.floor(math.random() * 10000))
-   local ok, err = fs.make_dir(temp_dir)
+   local ok, err = self:make_dir(temp_dir)
    if ok then
       return temp_dir
    else
@@ -264,15 +262,15 @@ function win32.make_temp_dir(name)
    end
 end
 
-function win32.tmpname()
+function win32:tmpname()
    return os.getenv("TMP")..os.tmpname()
 end
 
-function win32.current_user()
+function win32:current_user()
    return os.getenv("USERNAME")
 end
 
-function win32.export_cmd(var, val)
+function win32:export_cmd(var, val)
    return ("SET %s=%s"):format(var, val)
 end
 

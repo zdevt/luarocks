@@ -42,7 +42,7 @@ rockspec, and is not guaranteed to be complete or correct.
 ]]
 
 local function open_file(name)
-   return io.open(dir.path(fs.current_dir(), name), "r")
+   return io.open(dir.path(fs:current_dir(), name), "r")
 end
 
 local function get_url(rockspec)
@@ -55,7 +55,7 @@ local function get_url(rockspec)
    end
    util.printout("File successfully downloaded. Making checksum and checking base dir...")
    if fetch.is_basic_protocol(rockspec.source.protocol) then
-      rockspec.source.md5 = fs.get_md5(file)
+      rockspec.source.md5 = fs:get_md5(file)
    end
    local inferred_dir, found_dir = fetch.find_base_dir(file, temp_dir, rockspec.source.url)
    return true, found_dir or inferred_dir, temp_dir
@@ -117,8 +117,8 @@ local simple_scm_protocols = {
 }
 
 local function detect_url_from_command(program, args, directory)
-   local command = fs.Q(cfg.variables[program:upper()]).. " "..args
-   local pipe = io.popen(fs.command_at(directory, fs.quiet_stderr(command)))
+   local command = fs:Q(cfg.variables[program:upper()]).. " "..args
+   local pipe = fs.io_popen(fs:command_at(directory, fs:quiet_stderr(command)))
    if not pipe then return nil end
    local url = pipe:read("*a"):match("^([^\r\n]+)")
    pipe:close()
@@ -168,8 +168,8 @@ local function fill_as_builtin(rockspec, libs)
    local prefix = ""
 
    for _, parent in ipairs({"src", "lua"}) do
-      if fs.is_dir(parent) then
-         fs.change_dir(parent)
+      if fs:is_dir(parent) then
+         fs:change_dir(parent)
          prefix = parent.."/"
          break
       end
@@ -185,7 +185,7 @@ local function fill_as_builtin(rockspec, libs)
       end
    end
 
-   for _, file in ipairs(fs.find()) do
+   for _, file in ipairs(fs:find()) do
       local luamod = file:match("(.*)%.lua$")
       if luamod and not luamod_blacklist[luamod] then
          rockspec.build.modules[path.path_to_module(file)] = prefix..file
@@ -204,7 +204,7 @@ local function fill_as_builtin(rockspec, libs)
    end
    
    for _, directory in ipairs({ "doc", "docs", "samples", "tests" }) do
-      if fs.is_dir(directory) then
+      if fs:is_dir(directory) then
          if not rockspec.build.copy_directories then
             rockspec.build.copy_directories = {}
          end
@@ -213,7 +213,7 @@ local function fill_as_builtin(rockspec, libs)
    end
    
    if prefix ~= "" then
-      fs.pop_dir()
+      fs:pop_dir()
    end
 end
 
@@ -245,7 +245,7 @@ function write_rockspec.command(flags, name, version, url_or_dir)
    local protocol, pathname = dir.split_url(url_or_dir)
    if protocol == "file" then
       if pathname == "." then
-         name = name or dir.base_name(fs.current_dir())
+         name = name or dir.base_name(fs:current_dir())
       end
    elseif fetch.is_basic_protocol(protocol) then
       local filename = dir.base_name(url_or_dir)
@@ -263,7 +263,7 @@ function write_rockspec.command(flags, name, version, url_or_dir)
    end
    version = version or "dev"
 
-   local filename = flags["output"] or dir.path(fs.current_dir(), name:lower().."-"..version.."-1.rockspec")
+   local filename = flags["output"] or dir.path(fs:current_dir(), name:lower().."-"..version.."-1.rockspec")
 
    local rockspec = {
       rockspec_format = flags["rockspec-format"],
@@ -345,7 +345,7 @@ function write_rockspec.command(flags, name, version, url_or_dir)
       end
    end
 
-   local ok, err = fs.change_dir(local_dir)
+   local ok, err = fs:change_dir(local_dir)
    if not ok then return nil, "Failed reaching files from project - error entering directory "..local_dir end
 
    if (not flags["summary"]) or (not flags["detailed"]) then

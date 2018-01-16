@@ -36,12 +36,12 @@ function Api:save_config()
    end
    local upload_conf = upload_config_file()
    if not upload_conf then return nil end
-   local ok, err = fs.make_dir(dir.dir_name(upload_conf))
+   local ok, err = fs:make_dir(dir.dir_name(upload_conf))
    if not ok then
       return nil, err
    end
    persist.save_from_table(upload_conf, self.config)
-   fs.chmod(upload_conf, "0600")
+   fs:chmod(upload_conf, "0600")
 end
 
 function Api:check_version()
@@ -143,7 +143,7 @@ function Api:request(url, params, post_params)
    if not json_ok then return nil, "A JSON library is required for this command. "..json end
    
    if cfg.downloader == "wget" then
-      local curl_ok, err = fs.is_tool_available(vars.CURL, "curl")
+      local curl_ok, err = fs:is_tool_available(vars.CURL, "curl")
       if not curl_ok then
          return nil, err
       end
@@ -157,10 +157,10 @@ function Api:request(url, params, post_params)
    end
    local method = "GET"
    local out 
-   local tmpfile = fs.tmpname()
+   local tmpfile = fs:tmpname()
    if post_params then
       method = "POST"
-      local curl_cmd = fs.Q(vars.CURL).." -f -k -L --silent --user-agent \""..cfg.user_agent.." via curl\" "
+      local curl_cmd = fs:Q(vars.CURL).." -f -k -L --silent --user-agent \""..cfg.user_agent.." via curl\" "
       for k,v in pairs(post_params) do
          local var = v
          if type(v) == "table" then
@@ -171,12 +171,12 @@ function Api:request(url, params, post_params)
       if cfg.connection_timeout and cfg.connection_timeout > 0 then
         curl_cmd = curl_cmd .. "--connect-timeout "..tonumber(cfg.connection_timeout).." " 
       end
-      local ok = fs.execute_string(curl_cmd..fs.Q(url).." -o "..fs.Q(tmpfile))
+      local ok = fs:execute_string(curl_cmd..fs:Q(url).." -o "..fs:Q(tmpfile))
       if not ok then
          return nil, "API failure: " .. redact_api_url(url)
       end
    else
-      local ok, err = fs.download(url, tmpfile)
+      local ok, err = fs:download(url, tmpfile)
       if not ok then
          return nil, "API failure: " .. tostring(err) .. " - " .. redact_api_url(url)
       end

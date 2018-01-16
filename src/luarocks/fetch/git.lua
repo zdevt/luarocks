@@ -16,7 +16,7 @@ local cached_git_version
 -- @return table: git version as returned by luarocks.vers.parse_version.
 local function git_version(git_cmd)
    if not cached_git_version then
-      local version_line = io.popen(fs.Q(git_cmd)..' --version'):read()
+      local version_line = fs.io_popen(fs:Q(git_cmd)..' --version'):read()
       local version_string = version_line:match('%d-%.%d+%.?%d*')
       cached_git_version = vers.parse_version(version_string)
    end
@@ -54,7 +54,7 @@ local function git_identifier(git_cmd, ver)
    if not (ver:match("^dev%-%d+$") or ver:match("^scm%-%d+$")) then
       return nil
    end
-   local pd = io.popen(fs.command_at(fs.current_dir(), fs.Q(git_cmd).." log --pretty=format:%ai_%h -n 1"))
+   local pd = fs.io_popen(fs:command_at(fs:current_dir(), fs:Q(git_cmd).." log --pretty=format:%ai_%h -n 1"))
    if not pd then
       return nil
    end
@@ -86,26 +86,26 @@ function git.get_sources(rockspec, extract, dest_dir, depth)
    -- Strip off .git from base name if present
    module = module:gsub("%.git$", "")
 
-   local ok, err_msg = fs.is_tool_available(git_cmd, "Git")
+   local ok, err_msg = fs:is_tool_available(git_cmd, "Git")
    if not ok then
       return nil, err_msg
    end
 
    local store_dir
    if not dest_dir then
-      store_dir = fs.make_temp_dir(name_version)
+      store_dir = fs:make_temp_dir(name_version)
       if not store_dir then
          return nil, "Failed creating temporary directory."
       end
-      util.schedule_function(fs.delete, store_dir)
+      util.schedule_function(function(...) fs:delete(...) end, store_dir)
    else
       store_dir = dest_dir
    end
-   store_dir = fs.absolute_name(store_dir)
-   local ok, err = fs.change_dir(store_dir)
+   store_dir = fs:absolute_name(store_dir)
+   local ok, err = fs:change_dir(store_dir)
    if not ok then return nil, err end
 
-   local command = {fs.Q(git_cmd), "clone", depth or "--depth=1", rockspec.source.url, module}
+   local command = {fs:Q(git_cmd), "clone", depth or "--depth=1", rockspec.source.url, module}
    local tag_or_branch = rockspec.source.tag or rockspec.source.branch
    -- If the tag or branch is explicitly set to "master" in the rockspec, then
    -- we can avoid passing it to Git since it's the default.
@@ -117,27 +117,27 @@ function git.get_sources(rockspec, extract, dest_dir, depth)
          table.insert(command, 3, "--branch=" .. tag_or_branch)
       end
    end
-   if not fs.execute(unpack(command)) then
+   if not fs:execute(unpack(command)) then
       return nil, "Failed cloning git repository."
    end
-   ok, err = fs.change_dir(module)
+   ok, err = fs:change_dir(module)
    if not ok then return nil, err end
    if tag_or_branch and not git_can_clone_by_tag() then
-      if not fs.execute(fs.Q(git_cmd), "checkout", tag_or_branch) then
+      if not fs:execute(fs:Q(git_cmd), "checkout", tag_or_branch) then
          return nil, 'Failed to check out the "' .. tag_or_branch ..'" tag or branch.'
       end
    end
 
    -- Fetching git submodules is supported only when rockspec format is >= 3.0.
    if rockspec:format_is_at_least("3.0") then
-      command = {fs.Q(git_cmd), "submodule", "update", "--init", "--recursive"}
+      command = {fs:Q(git_cmd), "submodule", "update", "--init", "--recursive"}
 
       if git_supports_shallow_submodules(git_cmd) then
          -- Fetch only the last commit of each submodule.
          table.insert(command, 5, "--depth=1")
       end
 
-      if not fs.execute(unpack(command)) then
+      if not fs:execute(unpack(command)) then
          return nil, 'Failed to fetch submodules.'
       end
    end
@@ -146,10 +146,10 @@ function git.get_sources(rockspec, extract, dest_dir, depth)
       rockspec.source.identifier = git_identifier(git_cmd, rockspec.version)
    end
 
-   fs.delete(dir.path(store_dir, module, ".git"))
-   fs.delete(dir.path(store_dir, module, ".gitignore"))
-   fs.pop_dir()
-   fs.pop_dir()
+   fs:delete(dir.path(store_dir, module, ".git"))
+   fs:delete(dir.path(store_dir, module, ".gitignore"))
+   fs:pop_dir()
+   fs:pop_dir()
    return module, store_dir
 end
 

@@ -31,27 +31,27 @@ function pack.pack_source_rock(rockspec_file)
    rockspec_file = rockspec.local_filename
 
    local name_version = rockspec.name .. "-" .. rockspec.version
-   local rock_file = fs.absolute_name(name_version .. ".src.rock")
+   local rock_file = fs:absolute_name(name_version .. ".src.rock")
 
    local source_file, source_dir = fetch.fetch_sources(rockspec, false)
    if not source_file then
       return nil, source_dir
    end
-   local ok, err = fs.change_dir(source_dir)
+   local ok, err = fs:change_dir(source_dir)
    if not ok then return nil, err end
 
-   fs.delete(rock_file)
-   fs.copy(rockspec_file, source_dir, cfg.perm_read)
-   if not fs.zip(rock_file, dir.base_name(rockspec_file), dir.base_name(source_file)) then
+   fs:delete(rock_file)
+   fs:copy(rockspec_file, source_dir, cfg.perm_read)
+   if not fs:zip(rock_file, dir.base_name(rockspec_file), dir.base_name(source_file)) then
       return nil, "Failed packing "..rock_file
    end
-   fs.pop_dir()
+   fs:pop_dir()
 
    return rock_file
 end
 
 local function copy_back_files(name, version, file_tree, deploy_dir, pack_dir, perms)
-   local ok, err = fs.make_dir(pack_dir)
+   local ok, err = fs:make_dir(pack_dir)
    if not ok then return nil, err end
    for file, sub in pairs(file_tree) do
       local source = dir.path(deploy_dir, file)
@@ -61,10 +61,10 @@ local function copy_back_files(name, version, file_tree, deploy_dir, pack_dir, p
          if not ok then return nil, err end
       else
          local versioned = path.versioned_name(source, deploy_dir, name, version)
-         if fs.exists(versioned) then
-            fs.copy(versioned, target, perms)
+         if fs:exists(versioned) then
+            fs:copy(versioned, target, perms)
          else
-            fs.copy(source, target, perms)
+            fs:copy(source, target, perms)
          end
       end
    end
@@ -88,7 +88,7 @@ function pack.pack_installed_rock(name, version, tree)
 
    local root = path.root_dir(repo_url)
    local prefix = path.install_dir(name, version, root)
-   if not fs.exists(prefix) then
+   if not fs:exists(prefix) then
       return nil, "'"..name.." "..version.."' does not seem to be an installed rock."
    end
    
@@ -96,10 +96,10 @@ function pack.pack_installed_rock(name, version, tree)
    if not rock_manifest then return nil, err end
 
    local name_version = name .. "-" .. version
-   local rock_file = fs.absolute_name(name_version .. "."..cfg.arch..".rock")
+   local rock_file = fs:absolute_name(name_version .. "."..cfg.arch..".rock")
    
-   local temp_dir = fs.make_temp_dir("pack")
-   fs.copy_contents(prefix, temp_dir)
+   local temp_dir = fs:make_temp_dir("pack")
+   fs:copy_contents(prefix, temp_dir)
 
    local is_binary = false
    if rock_manifest.lib then
@@ -112,17 +112,17 @@ function pack.pack_installed_rock(name, version, tree)
       if not ok then return nil, "Failed copying back files: " .. err end
    end
    
-   local ok, err = fs.change_dir(temp_dir)
+   local ok, err = fs:change_dir(temp_dir)
    if not ok then return nil, err end
    if not is_binary and not repos.has_binaries(name, version) then
       rock_file = rock_file:gsub("%."..cfg.arch:gsub("%-","%%-").."%.", ".all.")
    end
-   fs.delete(rock_file)
-   if not fs.zip(rock_file, unpack(fs.list_dir())) then
+   fs:delete(rock_file)
+   if not fs:zip(rock_file, unpack(fs:list_dir())) then
       return nil, "Failed packing "..rock_file
    end
-   fs.pop_dir()
-   fs.delete(temp_dir)
+   fs:pop_dir()
+   fs:delete(temp_dir)
    return rock_file
 end
 
@@ -135,11 +135,11 @@ function pack.pack_binary_rock(name, version, cmd, ...)
    -- to shave off the final deploy steps from the build phase and the initial
    -- collect steps from the pack phase.
 
-   local temp_dir, err = fs.make_temp_dir("luarocks-build-pack-"..dir.base_name(name))
+   local temp_dir, err = fs:make_temp_dir("luarocks-build-pack-"..dir.base_name(name))
    if not temp_dir then
       return nil, "Failed creating temporary directory: "..err
    end
-   util.schedule_function(fs.delete, temp_dir)
+   util.schedule_function(function(...) fs:delete(...) end, temp_dir)
 
    path.use_tree(temp_dir)
    local ok, err = cmd(...)

@@ -327,14 +327,14 @@ function deps.check_external_deps(rockspec, mode)
 
                      for _, d in ipairs(paths) do
                         if pattern then
-                           for entry in fs.dir(d) do
+                           for entry in fs:dir(d) do
                               if entry:match(pattern) then
                                  found = true
                                  break
                               end
                            end
                         else
-                           found = fs.is_file(dir.path(d, f))
+                           found = fs:is_file(dir.path(d, f))
                         end
                         if found then
                            dirdata.dir = d

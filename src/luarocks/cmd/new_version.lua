@@ -75,7 +75,7 @@ local function check_url_and_update_md5(out_rs)
    if file then
       if out_rs.source.md5 then
          util.printout("File successfully downloaded. Updating MD5 checksum...")
-         local new_md5, err = fs.get_md5(file)
+         local new_md5, err = fs:get_md5(file)
          if not new_md5 then
             return nil, err
          end

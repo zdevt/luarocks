@@ -15,7 +15,7 @@ local dir = require("luarocks.dir")
 -- otherwise.
 local function execute(...)
    io.stdout:write(table.concat({...}, " ").."\n")
-   return fs.execute(...)
+   return fs:execute(...)
 end
 
 --- Makes an RC file with an embedded Lua script, for building .exes on Windows
@@ -121,7 +121,7 @@ function builtin.run(rockspec)
          add_flags(extras, "%s.lib", libraries)
          local basename = dir.base_name(library):gsub(".[^.]*$", "")
          local deffile = basename .. ".def"
-         local def = io.open(dir.path(fs.current_dir(), deffile), "w+")
+         local def = io.open(dir.path(fs:current_dir(), deffile), "w+")
          def:write("EXPORTS\n")
          def:write("luaopen_"..name:gsub("%.", "_").."\n")
          def:close()
@@ -133,7 +133,7 @@ function builtin.run(rockspec)
          end
          local manifestfile = basedir .. basename..".dll.manifest"
 
-         if ok and fs.exists(manifestfile) then
+         if ok and fs:exists(manifestfile) then
             ok = execute(variables.MT, "-manifest", manifestfile, "-outputresource:"..basedir..basename..".dll;2")
          end
          return ok
@@ -161,7 +161,7 @@ function builtin.run(rockspec)
          ok = execute(variables.LD, "-out:"..wrapname, resname, object,
                       dir.path(variables.LUA_LIBDIR, variables.LUALIB), "user32.lib")
          local manifestfile = wrapname..".manifest"
-         if ok and fs.exists(manifestfile) then
+         if ok and fs:exists(manifestfile) then
             ok = execute(variables.MT, "-manifest", manifestfile, "-outputresource:"..wrapname..";1")
          end
          return ok, wrapname
@@ -207,8 +207,8 @@ function builtin.run(rockspec)
    -- otherwise just appends .exe to the name. Only if `cfg.exewrapper = true`
    if build.install and build.install.bin then
      for key, name in pairs(build.install.bin) do
-       local fullname = dir.path(fs.current_dir(), name)
-       if cfg.exewrapper and fs.is_lua(fullname) then
+       local fullname = dir.path(fs:current_dir(), name)
+       if cfg.exewrapper and fs:is_lua(fullname) then
           ok, name = compile_wrapper_binary(fullname, name)
           if ok then
              build.install.bin[key] = name
@@ -243,7 +243,7 @@ function builtin.run(rockspec)
       if type(info) == "table" then
          if not checked_lua_h then
             local lua_incdir, lua_h = variables.LUA_INCDIR, "lua.h"
-            if not fs.exists(dir.path(lua_incdir, lua_h)) then
+            if not fs:exists(dir.path(lua_incdir, lua_h)) then
                return nil, "Lua header file "..lua_h.." not found (looked in "..lua_incdir.."). \n" ..
                            "You need to install the Lua development package for your system."
             end
@@ -267,7 +267,7 @@ function builtin.run(rockspec)
          local module_name = name:match("([^.]*)$").."."..util.matchquote(cfg.lib_extension)
          if moddir ~= "" then
             module_name = dir.path(moddir, module_name)
-            ok, err = fs.make_dir(moddir)
+            ok, err = fs:make_dir(moddir)
             if not ok then return nil, err end
          end
          lib_modules[module_name] = dir.path(libdir, module_name)
@@ -290,15 +290,15 @@ function builtin.run(rockspec)
    end
    for _, mods in ipairs({{ tbl = lua_modules, perms = cfg.perm_read }, { tbl = lib_modules, perms = cfg.perm_exec }}) do
       for name, dest in pairs(mods.tbl) do
-         fs.make_dir(dir.dir_name(dest))
-         ok, err = fs.copy(name, dest, mods.perms)
+         fs:make_dir(dir.dir_name(dest))
+         ok, err = fs:copy(name, dest, mods.perms)
          if not ok then
             return nil, "Failed installing "..name.." in "..dest..": "..err
          end
       end
    end
-   if fs.is_dir("lua") then
-      ok, err = fs.copy_contents("lua", luadir)
+   if fs:is_dir("lua") then
+      ok, err = fs:copy_contents("lua", luadir)
       if not ok then
          return nil, "Failed copying contents of 'lua' directory: "..err
       end

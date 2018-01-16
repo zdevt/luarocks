@@ -54,8 +54,12 @@ end
 -- these function, erasing temporaries.
 -- Functions are executed in the inverse order they were scheduled.
 function util.run_scheduled_functions()
+   if #scheduled_functions == 0 then
+      return
+   end
+
    local fs = require("luarocks.fs")
-   fs.change_dir_to_root()
+   fs:change_dir_to_root()
    for i = #scheduled_functions, 1, -1 do
       local item = scheduled_functions[i]
       item.fn(unpack(item.args))
@@ -398,11 +402,11 @@ local function collect_rockspecs(versions, paths, unnamed_paths, subdir)
    local path = require("luarocks.path")
    local vers = require("luarocks.vers")
 
-   if fs.is_dir(subdir) then
-      for file in fs.dir(subdir) do
+   if fs:is_dir(subdir) then
+      for file in fs:dir(subdir) do
          file = dir.path(subdir, file)
 
-         if file:match("rockspec$") and fs.is_file(file) then
+         if file:match("rockspec$") and fs:is_file(file) then
             local rock, version = path.parse_name(file)
 
             if rock then
@@ -451,7 +455,7 @@ function util.get_default_rockspec()
    end
 end
 
--- Quote Lua string, analogous to fs.Q.
+-- Quote Lua string, analogous to fs:Q.
 -- @param s A string, such as "hello"
 -- @return string: A quoted string, such as '"hello"'
 function util.LQ(s)

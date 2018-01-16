@@ -39,7 +39,7 @@ local function install_files(files, location, is_module_path, perms)
             local modname = k
             if is_module_path then
                dest = dir.path(location, path.module_to_path(modname))
-               local ok, err = fs.make_dir(dest)
+               local ok, err = fs:make_dir(dest)
                if not ok then return nil, err end
                if filename:match("%.lua$") then
                   local basename = modname:match("([^.]+)$")
@@ -47,15 +47,15 @@ local function install_files(files, location, is_module_path, perms)
                end
             else
                dest = dir.path(location, dir.dir_name(modname))
-               local ok, err = fs.make_dir(dest)
+               local ok, err = fs:make_dir(dest)
                if not ok then return nil, err end
                filename = dir.base_name(modname)
             end
          else
-            local ok, err = fs.make_dir(dest)
+            local ok, err = fs:make_dir(dest)
             if not ok then return nil, err end
          end
-         local ok = fs.copy(dir.path(file), dir.path(dest, filename), perms)
+         local ok = fs:copy(dir.path(file), dir.path(dest, filename), perms)
          if not ok then
             return nil, "Failed copying "..file
          end
@@ -69,7 +69,7 @@ end
 -- @param files table: The table of files to be written.
 local function extract_from_rockspec(files)
    for name, content in pairs(files) do
-      local fd = io.open(dir.path(fs.current_dir(), name), "w+")
+      local fd = io.open(dir.path(fs:current_dir(), name), "w+")
       fd:write(content)
       fd:close()
    end
@@ -93,7 +93,7 @@ function build.apply_patches(rockspec)
       for patch, patchdata in util.sortedpairs(build_spec.patches) do
          util.printout("Applying patch "..patch.."...")
          local create_delete = rockspec:format_is_at_least("3.0")
-         local ok, err = fs.apply_patch(tostring(patch), patchdata, create_delete)
+         local ok, err = fs:apply_patch(tostring(patch), patchdata, create_delete)
          if not ok then
             return nil, "Failed applying patch "..patch
          end
@@ -106,14 +106,14 @@ local function install_default_docs(name, version)
    local patterns = { "readme", "license", "copying", ".*%.md" }
    local dest = dir.path(path.install_dir(name, version), "doc")
    local has_dir = false
-   for file in fs.dir() do
+   for file in fs:dir() do
       for _, pattern in ipairs(patterns) do
          if file:lower():match("^"..pattern) then
             if not has_dir then
-               fs.make_dir(dest)
+               fs:make_dir(dest)
                has_dir = true
             end
-            fs.copy(file, dest, cfg.perm_read)
+            fs:copy(file, dest, cfg.perm_read)
             break
          end
       end
@@ -206,15 +206,15 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
          if not ok then
             return nil, source_dir, errcode
          end
-         local ok, err = fs.change_dir(source_dir)
+         local ok, err = fs:change_dir(source_dir)
          if not ok then return nil, err end
       elseif rockspec.source.file then
-         local ok, err = fs.unpack_archive(rockspec.source.file)
+         local ok, err = fs:unpack_archive(rockspec.source.file)
          if not ok then
             return nil, err
          end
       end
-      fs.change_dir(rockspec.source.dir)
+      fs:change_dir(rockspec.source.dir)
    end
    
    local dirs = {
@@ -225,12 +225,12 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
    }
    
    for _, d in pairs(dirs) do
-      local ok, err = fs.make_dir(d.name)
+      local ok, err = fs:make_dir(d.name)
       if not ok then return nil, err end
    end
    local rollback = util.schedule_function(function()
-      fs.delete(path.install_dir(name, version))
-      fs.remove_dir_if_empty(path.versions_dir(name))
+      fs:delete(path.install_dir(name, version))
+      fs:remove_dir_if_empty(path.versions_dir(name))
    end)
 
    local build_spec = rockspec.build
@@ -289,10 +289,10 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
 
    local any_docs = false
    for _, copy_dir in pairs(copy_directories) do
-      if fs.is_dir(copy_dir) then
+      if fs:is_dir(copy_dir) then
          local dest = dir.path(path.install_dir(name, version), copy_dir)
-         fs.make_dir(dest)
-         fs.copy_contents(copy_dir, dest)
+         fs:make_dir(dest)
+         fs:copy_contents(copy_dir, dest)
          any_docs = true
       else
          if not copying_default then
@@ -306,14 +306,14 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
    end
    
    for _, d in pairs(dirs) do
-      fs.remove_dir_if_empty(d.name)
+      fs:remove_dir_if_empty(d.name)
    end
 
-   fs.pop_dir()
+   fs:pop_dir()
    
-   fs.copy(rockspec.local_filename, path.rockspec_file(name, version), cfg.perm_read)
+   fs:copy(rockspec.local_filename, path.rockspec_file(name, version), cfg.perm_read)
    if need_to_fetch then
-      fs.pop_dir()
+      fs:pop_dir()
    end
 
    ok, err = writer.make_rock_manifest(name, version)

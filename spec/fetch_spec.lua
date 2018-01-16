@@ -1,10 +1,22 @@
 local test_env = require("spec.util.test_env")
 
 test_env.unload_luarocks()
-local fetch = require("luarocks.fetch")
-local vers = require("luarocks.vers")
 
 describe("Luarocks fetch test #whitebox #w_fetch", function()
+   local fetch
+   local vers
+   local fs
+   
+   setup(function()
+      local cfg = require("luarocks.core.cfg")
+      local fs_init = require("luarocks.fs_init")
+      fs = fs_init.new(cfg.platforms, false, cfg.fs_use_modules)
+      package.loaded["luarocks.fs"] = fs
+      
+      fetch = require("luarocks.fetch")
+      vers = require("luarocks.vers")
+   end)
+
    it("Fetch url to base dir", function()
       assert.are.same("v0.3", fetch.url_to_base_dir("https://github.com/hishamhm/lua-compat-5.2/archive/v0.3.zip"))
       assert.are.same("lua-compat-5.2", fetch.url_to_base_dir("https://github.com/hishamhm/lua-compat-5.2.zip"))

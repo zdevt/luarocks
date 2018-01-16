@@ -39,7 +39,7 @@ function purge.command(flags)
    local results = {}
    local query = search.make_query("")
    query.exact_name = false
-   if not fs.is_dir(tree) then
+   if not fs:is_dir(tree) then
       return nil, "Directory not found: "..tree
    end
 

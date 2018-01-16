@@ -34,7 +34,7 @@ local vers = require("luarocks.vers")
 local function get_installed_versions(name)
    assert(type(name) == "string")
    
-   local dirs = fs.list_dir(path.versions_dir(name))
+   local dirs = fs:list_dir(path.versions_dir(name))
    return (dirs and #dirs > 0) and dirs or nil
 end
 
@@ -48,7 +48,7 @@ function repos.is_installed(name, version)
    assert(type(name) == "string")
    assert(type(version) == "string")
       
-   return fs.is_dir(path.install_dir(name, version))
+   return fs:is_dir(path.install_dir(name, version))
 end
 
 local function recurse_rock_manifest_tree(file_tree, action) 
@@ -138,7 +138,7 @@ function repos.has_binaries(name, version)
    if rock_manifest and rock_manifest.bin then
       for bin_name, md5 in pairs(rock_manifest.bin) do
          -- TODO verify that it is the same file. If it isn't, find the actual command.
-         if fs.is_actual_binary(dir.path(cfg.deploy_bin_dir, bin_name)) then
+         if fs:is_actual_binary(dir.path(cfg.deploy_bin_dir, bin_name)) then
             return true
          end
       end
@@ -166,7 +166,7 @@ function repos.run_hook(rockspec, hook_name)
    local hook = hooks[hook_name]
    if hook then
       util.printout(hook)
-      if not fs.execute(hook) then
+      if not fs:execute(hook) then
          return nil, "Failed running "..hook_name.." hook."
       end
    end
@@ -192,7 +192,7 @@ local function find_suffixed(file, suffix)
    end
 
    for _, filename in ipairs(filenames) do
-      if fs.exists(filename) then
+      if fs:exists(filename) then
          return filename
       end
    end
@@ -208,7 +208,7 @@ local function move_suffixed(from_file, to_file, suffix)
 
    suffix = suffixed_from_file:sub(#from_file + 1)
    local suffixed_to_file = to_file .. suffix
-   return fs.move(suffixed_from_file, suffixed_to_file)
+   return fs:move(suffixed_from_file, suffixed_to_file)
 end
 
 local function delete_suffixed(file, suffix)
@@ -217,8 +217,8 @@ local function delete_suffixed(file, suffix)
       return nil, "Could not remove " .. file .. ": " .. err, "not found"
    end
 
-   fs.delete(suffixed_file)
-   if fs.exists(suffixed_file) then
+   fs:delete(suffixed_file)
+   if fs:exists(suffixed_file) then
       return nil, "Failed deleting " .. suffixed_file .. ": file still exists", "fail"
    end
 
@@ -251,7 +251,7 @@ local function prepare_target(name, version, deploy_type, file_path, suffix)
       local cur_deploy_type, cur_file_path = manif.get_providing_file(cur_name, cur_version, item_type, item_name)
       local cur_non_versioned, cur_versioned = get_deploy_paths(cur_name, cur_version, cur_deploy_type, cur_file_path)
 
-      local dir_ok, dir_err = fs.make_dir(dir.dir_name(cur_versioned))
+      local dir_ok, dir_err = fs:make_dir(dir.dir_name(cur_versioned))
       if not dir_ok then return nil, dir_err end
 
       local move_ok, move_err = move_suffixed(cur_non_versioned, cur_versioned, suffix)
@@ -290,40 +290,40 @@ function repos.deploy_files(name, version, wrap_bin_scripts, deps_mode)
          local target, prepare_err = prepare_target(name, version, deploy_type, file_path, suffix)
          if not target then return nil, prepare_err end
 
-         local dir_ok, dir_err = fs.make_dir(dir.dir_name(target))
+         local dir_ok, dir_err = fs:make_dir(dir.dir_name(target))
          if not dir_ok then return nil, dir_err end
 
          local suffixed_target, mover = move_fn(source, target)
-         if fs.exists(suffixed_target) then
+         if fs:exists(suffixed_target) then
             local backup = suffixed_target
             repeat
                backup = backup.."~"
-            until not fs.exists(backup) -- Slight race condition here, but shouldn't be a problem.
+            until not fs:exists(backup) -- Slight race condition here, but shouldn't be a problem.
 
             util.warning(suffixed_target.." is not tracked by this installation of LuaRocks. Moving it to "..backup)
-            local move_ok, move_err = fs.move(suffixed_target, backup)
+            local move_ok, move_err = fs:move(suffixed_target, backup)
             if not move_ok then return nil, move_err end
          end
 
          local move_ok, move_err = mover()
          if not move_ok then return nil, move_err end
 
-         fs.remove_dir_tree_if_empty(dir.dir_name(source))
+         fs:remove_dir_tree_if_empty(dir.dir_name(source))
          return true
       end)
    end
 
    local function install_binary(source, target)
-      if wrap_bin_scripts and fs.is_lua(source) then
-         return target .. (cfg.wrapper_suffix or ""), function() return fs.wrap_script(source, target, name, version) end
+      if wrap_bin_scripts and fs:is_lua(source) then
+         return target .. (cfg.wrapper_suffix or ""), function() return fs:wrap_script(source, target, name, version) end
       else
-         return target, function() return fs.copy_binary(source, target) end
+         return target, function() return fs:copy_binary(source, target) end
       end
    end
 
    local function make_mover(perms)
       return function(source, target)
-         return target, function() return fs.move(source, target, perms) end
+         return target, function() return fs:move(source, target, perms) end
       end
    end
 
@@ -399,11 +399,11 @@ function repos.delete_version(name, version, deps_mode, quick)
                local move_ok, move_err = move_suffixed(next_versioned, next_non_versioned, suffix)
                if not move_ok then return nil, move_err end
 
-               fs.remove_dir_tree_if_empty(dir.dir_name(next_versioned))
+               fs:remove_dir_tree_if_empty(dir.dir_name(next_versioned))
             end
          end
 
-         fs.remove_dir_tree_if_empty(dir.dir_name(target))
+         fs:remove_dir_tree_if_empty(dir.dir_name(target))
          return true
       end)
    end
@@ -417,9 +417,9 @@ function repos.delete_version(name, version, deps_mode, quick)
    ok, err = delete_deployed_file_tree("lib")
    if not ok then return nil, err end
 
-   fs.delete(path.install_dir(name, version))
+   fs:delete(path.install_dir(name, version))
    if not get_installed_versions(name) then
-      fs.delete(dir.path(cfg.rocks_dir, name))
+      fs:delete(dir.path(cfg.rocks_dir, name))
    end
 
    if quick then

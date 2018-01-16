@@ -20,7 +20,7 @@ function svn.get_sources(rockspec, extract, dest_dir)
    assert(type(dest_dir) == "string" or not dest_dir)
 
    local svn_cmd = rockspec.variables.SVN
-   local ok, err_msg = fs.is_tool_available(svn_cmd, "--version", "Subversion")
+   local ok, err_msg = fs:is_tool_available(svn_cmd, "--version", "Subversion")
    if not ok then
       return nil, err_msg
    end
@@ -35,28 +35,28 @@ function svn.get_sources(rockspec, extract, dest_dir)
    end
    local store_dir
    if not dest_dir then
-      store_dir = fs.make_temp_dir(name_version)
+      store_dir = fs:make_temp_dir(name_version)
       if not store_dir then
          return nil, "Failed creating temporary directory."
       end
-      util.schedule_function(fs.delete, store_dir)
+      util.schedule_function(function(...) fs:delete(...) end, store_dir)
    else
       store_dir = dest_dir
    end
-   local ok, err = fs.change_dir(store_dir)
+   local ok, err = fs:change_dir(store_dir)
    if not ok then return nil, err end
-   if not fs.execute(unpack(command)) then
+   if not fs:execute(unpack(command)) then
       return nil, "Failed fetching files from Subversion."
    end
-   ok, err = fs.change_dir(module)
+   ok, err = fs:change_dir(module)
    if not ok then return nil, err end
-   for _, d in ipairs(fs.find(".")) do
+   for _, d in ipairs(fs:find(".")) do
       if dir.base_name(d) == ".svn" then
-         fs.delete(dir.path(store_dir, module, d))
+         fs:delete(dir.path(store_dir, module, d))
       end
    end
-   fs.pop_dir()
-   fs.pop_dir()
+   fs:pop_dir()
+   fs:pop_dir()
    return module, store_dir
 end
 

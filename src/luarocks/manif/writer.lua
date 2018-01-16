@@ -240,7 +240,7 @@ local function save_table(where, name, tbl)
    local filename = dir.path(where, name)
    local ok, err = persist.save_from_table(filename..".tmp", tbl)
    if ok then
-      ok, err = fs.replace_file(filename, filename..".tmp")
+      ok, err = fs:replace_file(filename, filename..".tmp")
    end
    return ok, err
 end
@@ -248,7 +248,7 @@ end
 function writer.make_rock_manifest(name, version)
    local install_dir = path.install_dir(name, version)
    local tree = {}
-   for _, file in ipairs(fs.find(install_dir)) do
+   for _, file in ipairs(fs:find(install_dir)) do
       local full_path = dir.path(install_dir, file)
       local walk = tree
       local last
@@ -263,8 +263,8 @@ function writer.make_rock_manifest(name, version)
          last_name = filename
          walk = next
       end
-      if fs.is_file(full_path) then
-         local sum, err = fs.get_md5(full_path)
+      if fs:is_file(full_path) then
+         local sum, err = fs:get_md5(full_path)
          if not sum then
             return nil, "Failed producing checksum: "..tostring(err)
          end
@@ -292,7 +292,7 @@ function writer.make_manifest(repo, deps_mode, remote)
 
    if deps_mode == "none" then deps_mode = cfg.deps_mode end
 
-   if not fs.is_dir(repo) then
+   if not fs:is_dir(repo) then
       return nil, "Cannot access repository at "..repo
    end
 

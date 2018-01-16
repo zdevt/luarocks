@@ -18,13 +18,13 @@ function command.run(rockspec)
    
    if build.build_command then
       util.printout(build.build_command)
-      if not fs.execute(build.build_command) then
+      if not fs:execute(build.build_command) then
          return nil, "Failed building."
       end
    end
    if build.install_command then
       util.printout(build.install_command)
-      if not fs.execute(build.install_command) then
+      if not fs:execute(build.install_command) then
          return nil, "Failed installing."
       end
    end

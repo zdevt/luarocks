@@ -22,14 +22,14 @@ function cmake.run(rockspec)
 
    util.variable_substitutions(variables, rockspec.variables)
 
-   local ok, err_msg = fs.is_tool_available(rockspec.variables.CMAKE, "CMake")
+   local ok, err_msg = fs:is_tool_available(rockspec.variables.CMAKE, "CMake")
    if not ok then
       return nil, err_msg
    end
 
    -- If inline cmake is present create CMakeLists.txt from it.
    if type(build.cmake) == "string" then
-      local cmake_handler = assert(io.open(fs.current_dir().."/CMakeLists.txt", "w"))
+      local cmake_handler = assert(io.open(fs:current_dir().."/CMakeLists.txt", "w"))
       cmake_handler:write(build.cmake)
       cmake_handler:close()
    end
@@ -48,7 +48,7 @@ function cmake.run(rockspec)
       args = args .. ' -D' ..k.. '="' ..tostring(v).. '"'
    end
 
-   if not fs.execute_string(rockspec.variables.CMAKE.." -H. -Bbuild.luarocks "..args) then
+   if not fs:execute_string(rockspec.variables.CMAKE.." -H. -Bbuild.luarocks "..args) then
       return nil, "Failed cmake."
    end
 
@@ -62,12 +62,12 @@ function cmake.run(rockspec)
    end
 
    if do_build then
-      if not fs.execute_string(rockspec.variables.CMAKE.." --build build.luarocks --config Release") then
+      if not fs:execute_string(rockspec.variables.CMAKE.." --build build.luarocks --config Release") then
          return nil, "Failed building."
       end
    end
    if do_install then
-      if not fs.execute_string(rockspec.variables.CMAKE.." --build build.luarocks --target install --config Release") then
+      if not fs:execute_string(rockspec.variables.CMAKE.." --build build.luarocks --target install --config Release") then
          return nil, "Failed installing."
       end
    end

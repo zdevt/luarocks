@@ -124,7 +124,7 @@ function index.format_external_dependencies(rockspec)
 end
 
 function index.make_index(repo)
-   if not fs.is_dir(repo) then
+   if not fs:is_dir(repo) then
       return nil, "Cannot access repository at "..repo
    end
    local manifest = manif.load_manifest(repo)
