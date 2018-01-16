@@ -8,27 +8,27 @@ local command_line = require("luarocks.command_line")
 
 local program_description = "LuaRocks main command-line interface"
 
-local commands = {
-   help = "luarocks.cmd.help",
-   pack = "luarocks.cmd.pack",
-   unpack = "luarocks.cmd.unpack",
-   build = "luarocks.cmd.build",
-   install = "luarocks.cmd.install",
-   search = "luarocks.cmd.search",
-   list = "luarocks.cmd.list",
-   remove = "luarocks.cmd.remove",
-   make = "luarocks.cmd.make",
-   download = "luarocks.cmd.download",
-   path = "luarocks.cmd.path",
-   show = "luarocks.cmd.show",
-   new_version = "luarocks.cmd.new_version",
-   lint = "luarocks.cmd.lint",
-   write_rockspec = "luarocks.cmd.write_rockspec",
-   purge = "luarocks.cmd.purge",
-   doc = "luarocks.cmd.doc",
-   upload = "luarocks.cmd.upload",
-   config = "luarocks.cmd.config",
-   which = "luarocks.cmd.which",
+local commands    = {
+   help           = { module = "luarocks.cmd.help" },
+   build          = { module = "luarocks.cmd.build",   check_permissions = true },
+   install        = { module = "luarocks.cmd.install", check_permissions = true },
+   remove         = { module = "luarocks.cmd.remove",  check_permissions = true },
+   make           = { module = "luarocks.cmd.make",    check_permissions = true },
+   purge          = { module = "luarocks.cmd.purge",   check_permissions = true },
+   pack           = { module = "luarocks.cmd.pack" },
+   unpack         = { module = "luarocks.cmd.unpack" },
+   search         = { module = "luarocks.cmd.search" },
+   list           = { module = "luarocks.cmd.list" },
+   download       = { module = "luarocks.cmd.download" },
+   path           = { module = "luarocks.cmd.path" },
+   show           = { module = "luarocks.cmd.show" },
+   new_version    = { module = "luarocks.cmd.new_version" },
+   lint           = { module = "luarocks.cmd.lint" },
+   write_rockspec = { module = "luarocks.cmd.write_rockspec" },
+   doc            = { module = "luarocks.cmd.doc" },
+   upload         = { module = "luarocks.cmd.upload" },
+   config         = { module = "luarocks.cmd.config" },
+   which          = { module = "luarocks.cmd.which" },
 }
 
 command_line.run_command(program_description, commands, ...)

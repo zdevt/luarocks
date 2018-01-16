@@ -158,13 +158,11 @@ function install.command(flags, name, version)
       return nil, "Argument missing. "..util.see_help("install")
    end
 
-   local ok, err = fs.check_command_permissions(flags)
-   if not ok then return nil, err, cfg.errorcodes.PERMISSIONDENIED end
-
    if name:match("%.rockspec$") or name:match("%.src%.rock$") then
       local build = require("luarocks.cmd.build")
       return build.command(flags, name)
    elseif name:match("%.rock$") then
+      local ok, err
       if flags["only-deps"] then
          ok, err = install.install_binary_rock_deps(name, deps.get_deps_mode(flags))
       else

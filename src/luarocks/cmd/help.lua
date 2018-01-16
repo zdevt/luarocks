@@ -72,10 +72,10 @@ function help.show_help(command, program_description, commands)
 	Variables from the "variables" table of the configuration file
 	can be overriden with VAR=VALUE assignments.]])
       print_section("COMMANDS")
-      for name, modname in util.sortedpairs(commands) do
-         local cmd = require(modname)
+      for name, data in util.sortedpairs(commands) do
+         local mod = require(data.module)
          util.printout("", name)
-         util.printout("\t", cmd.help_summary)
+         util.printout("\t", mod.help_summary)
       end
       print_section("CONFIGURATION")
       util.printout("\tLua version: " .. cfg.lua_version)
@@ -97,16 +97,16 @@ function help.show_help(command, program_description, commands)
       end
    else
       command = command:gsub("-", "_")
-      local cmd = commands[command] and require(commands[command])
-      if cmd then
-         local arguments = cmd.help_arguments or "<argument>"
+      local mod = commands[command] and require(commands[command].module)
+      if mod then
+         local arguments = mod.help_arguments or "<argument>"
          print_banner()
          print_section("NAME")
-         util.printout("\t"..program.." "..command.." - "..cmd.help_summary)
+         util.printout("\t"..program.." "..command.." - "..mod.help_summary)
          print_section("SYNOPSIS")
          util.printout("\t"..program.." "..command.." "..arguments)
          print_section("DESCRIPTION")
-         util.printout("",(cmd.help:gsub("\n","\n\t"):gsub("\n\t$","")))
+         util.printout("",(mod.help:gsub("\n","\n\t"):gsub("\n\t$","")))
          print_section("SEE ALSO")
          util.printout("","'"..program.." help' for general options and configuration.\n")
       else

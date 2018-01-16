@@ -8,12 +8,12 @@ local command_line = require("luarocks.command_line")
 
 local program_description = "LuaRocks repository administration interface"
 
-local commands = {
-   help = "luarocks.cmd.help",
-   make_manifest = "luarocks.admin.cmd.make_manifest",
-   add = "luarocks.admin.cmd.add",
-   remove = "luarocks.admin.cmd.remove",
-   refresh_cache = "luarocks.admin.cmd.refresh_cache",
+local commands   = {
+   help          = { module = "luarocks.cmd.help" },
+   make_manifest = { module = "luarocks.admin.cmd.make_manifest" },
+   add           = { module = "luarocks.admin.cmd.add" },
+   remove        = { module = "luarocks.admin.cmd.remove" },
+   refresh_cache = { module = "luarocks.admin.cmd.refresh_cache" },
 }
 
 command_line.run_command(program_description, commands, ...)

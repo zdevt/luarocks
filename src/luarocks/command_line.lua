@@ -53,6 +53,54 @@ local function is_ownership_ok(directory)
    return false
 end
 
+--- Check if user has write permissions for the command.
+-- Assumes the configuration variables under cfg have been previously set up.
+-- @param flags table: the flags table passed to run() drivers.
+-- @return boolean or (boolean, string): true on success, false on failure,
+-- plus an error message.
+local function check_command_permissions(flags)
+
+   if flags["pack-binary-rock"] then
+      return true
+   end
+
+   local ok = true
+   local err = ""
+   for _, directory in ipairs { cfg.rocks_dir, cfg.deploy_lua_dir, cfg.deploy_bin_dir, cfg.deploy_lua_dir } do
+      if fs.exists(directory) then
+         if not fs.is_writable(directory) then
+            ok = false
+            err = "Your user does not have write permissions in " .. directory
+            break
+         end
+      else
+         local root = fs.root_of(directory)
+         local parent = directory
+         repeat
+            parent = dir.dir_name(parent)
+            if parent == "" then
+               parent = root
+            end
+         until parent == root or fs.exists(parent)
+         if not fs.is_writable(parent) then
+            ok = false
+            err = directory.." does not exist and your user does not have write permissions in " .. parent
+            break
+         end
+      end
+   end
+   if ok then
+      return true
+   else
+      if flags["local"] then
+         err = err .. " \n-- please check your permissions."
+      else
+         err = err .. " \n-- you may want to run as a privileged user or use your local tree with --local."
+      end
+      return nil, err
+   end
+end
+
 --- Main command-line processor.
 -- Parses input arguments and calls the appropriate driver function
 -- to execute the action requested on the command-line, forwarding
@@ -203,7 +251,7 @@ function command_line.run_command(program_description, commands, ...)
    end
   
    if command == "help" then
-      local help = require(commands["help"])
+      local help = require(commands["help"].module)
       local ok, err, exitcode = help.show_help(nonflags[1], program_description, commands)
       if not ok then
          die(err, exitcode)
@@ -229,9 +277,17 @@ function command_line.run_command(program_description, commands, ...)
       cfg.local_cache = fs.make_temp_dir("local_cache")
       util.schedule_function(fs.delete, cfg.local_cache)
    end
-   
+
    if commands[command] then
-      local cmd = require(commands[command])
+   
+      if commands[command].check_permissions then
+         local ok, err = check_command_permissions(flags)
+         if not ok then
+            die(err, cfg.errorcodes.PERMISSIONDENIED)
+         end
+      end
+   
+      local cmd = require(commands[command].module)
       local call_ok, ok, err, exitcode = xpcall(function() return cmd.command(flags, unpack(nonflags)) end, error_handler)
       if not call_ok then
          die(ok, cfg.errorcodes.CRASH)

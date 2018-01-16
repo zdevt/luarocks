@@ -38,9 +38,6 @@ function cmd_remove.command(flags, name, version)
    
    local deps_mode = flags["deps-mode"] or cfg.deps_mode
    
-   local ok, err = fs.check_command_permissions(flags)
-   if not ok then return nil, err, cfg.errorcodes.PERMISSIONDENIED end
-   
    local rock_type = name:match("%.(rock)$") or name:match("%.(rockspec)$")
    local filename = name
    if rock_type then

@@ -100,9 +100,7 @@ function cmd_build.command(flags, name, version)
    if flags["pack-binary-rock"] then
       return pack.pack_binary_rock(name, version, do_build, name, version, deps.get_deps_mode(flags))
    else
-      local ok, err = fs.check_command_permissions(flags)
-      if not ok then return nil, err, cfg.errorcodes.PERMISSIONDENIED end
-      ok, err = do_build(name, version, deps.get_deps_mode(flags), flags["only-deps"])
+      local ok, err = do_build(name, version, deps.get_deps_mode(flags), flags["only-deps"])
       if not ok then return nil, err end
       name, version = ok, err
 

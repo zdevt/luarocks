@@ -43,9 +43,6 @@ function purge.command(flags)
       return nil, "Directory not found: "..tree
    end
 
-   local ok, err = fs.check_command_permissions(flags)
-   if not ok then return nil, err, cfg.errorcodes.PERMISSIONDENIED end
-
    search.manifest_search(results, path.rocks_dir(tree), query)
 
    local sort = function(a,b) return vers.compare_versions(b,a) end
