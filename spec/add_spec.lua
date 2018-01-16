@@ -28,12 +28,11 @@ describe("LuaRocks add tests #blackbox #b_add", function()
          assert.is_false(run.luarocks_admin_bool("--server=invalid add " .. testing_paths.testing_server .. "/luasocket-3.0rc1-2.src.rock"))
       end)
       
-      it("LuaRocks-admin add invalid server #ssh", function()
+      it("LuaRocks-admin add to server #ssh", function()
          assert.is_true(run.luarocks_admin_bool("--server=testing add " .. testing_paths.testing_server .. "/luasocket-3.0rc1-2.src.rock"))
       end)
       
-      --TODO This test fails, sftp support not yet implemented
-      it("LuaRocks-admin add invalid server", function()
+      it("LuaRocks-admin add via sftp", function()
          assert.is_false(run.luarocks_admin_bool("--server=testing add luasocket-3.0rc1-2.src.rock", { LUAROCKS_CONFIG = testing_paths.testrun_dir .. "/testing_config_sftp.lua" } ))
       end)
       
