@@ -21,8 +21,7 @@ end
 function Api:load_config()
    local upload_conf = upload_config_file()
    if not upload_conf then return nil end
-   local cfg, err = persist.load_into_table(upload_conf)
-   return cfg
+   return persist.load_into_table(upload_conf)
 end
 
 function Api:save_config()

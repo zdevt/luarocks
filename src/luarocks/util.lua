@@ -15,7 +15,7 @@ util.keys = core.keys
 util.printerr = core.printerr
 util.sortedpairs = core.sortedpairs
 
-local unpack = unpack or table.unpack
+local unpack = unpack or table.unpack -- luacheck: ignore
 
 local scheduled_functions = {}
 local debug = require("debug")
@@ -178,11 +178,11 @@ function util.parse_flags(...)
                end
             end
          else
-            local var = flag
+            var = flag
             local vartype = supported_flags[var]
             if type(vartype) == "string" then
                i = i + 1
-               local val = args[i]
+               val = args[i]
                if not val then
                   return { ERROR = "Invalid argument: flag --"..var.."="..vartype.." expects a parameter." }
                end

@@ -63,7 +63,7 @@ local function git_identifier(git_cmd, ver)
    if not date_hash then
       return nil
    end
-   local date, time, tz, hash = date_hash:match("([^%s]+) ([^%s]+) ([^%s]+)_([^%s]+)")
+   local date, time, _, hash = date_hash:match("([^%s]+) ([^%s]+) ([^%s]+)_([^%s]+)")
    date = date:gsub("%-", "")
    time = time:gsub(":", "")
    return date .. "." .. time .. "." .. hash

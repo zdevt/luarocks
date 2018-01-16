@@ -48,7 +48,8 @@ function cache.split_server_url(server, url, user, password)
 end
 
 function cache.refresh_local_cache(server, url, user, password)
-   local local_cache, protocol, server_path, user, password = cache.split_server_url(server, url, user, password)
+   local local_cache, protocol, server_path
+   local_cache, protocol, server_path, user, password = cache.split_server_url(server, url, user, password)
    local ok, err = fs.make_dir(local_cache)
    if not ok then
       return nil, "Failed creating local cache dir: "..err
@@ -58,7 +59,6 @@ function cache.refresh_local_cache(server, url, user, password)
    util.printout("Refreshing cache "..local_cache.."...")
 
    -- TODO abstract away explicit 'wget' call
-   local ok = false
    if protocol == "rsync" then
       local srv, path = server_path:match("([^/]+)(/.+)")
       ok = fs.execute(cfg.variables.RSYNC.." "..cfg.variables.RSYNCFLAGS.." -e ssh "..user.."@"..srv..":"..path.."/ "..local_cache.."/")

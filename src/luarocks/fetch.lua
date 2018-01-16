@@ -129,18 +129,18 @@ end
 --- Obtain a rock and unpack it.
 -- If a directory is not given, a temporary directory will be created,
 -- which will be deleted on program termination.
--- @param rock_file string: URL or filename of the rock.
+-- @param rock_url string: URL or filename of the rock.
 -- @param dest string or nil: if given, directory will be used as
 -- a permanent destination.
 -- @return string or (nil, string, [string]): the directory containing the contents
 -- of the unpacked rock.
-function fetch.fetch_and_unpack_rock(rock_file, dest)
-   assert(type(rock_file) == "string")
+function fetch.fetch_and_unpack_rock(rock_url, dest)
+   assert(type(rock_url) == "string")
    assert(type(dest) == "string" or not dest)
 
-   local name = dir.base_name(rock_file):match("(.*)%.[^.]*%.rock")
+   local name = dir.base_name(rock_url):match("(.*)%.[^.]*%.rock")
    
-   local rock_file, err, errcode = fetch.fetch_url_at_temp_dir(rock_file,"luarocks-rock-"..name)
+   local rock_file, err, errcode = fetch.fetch_url_at_temp_dir(rock_url, "luarocks-rock-"..name)
    if not rock_file then
       return nil, "Could not fetch rock file: " .. err, errcode
    end

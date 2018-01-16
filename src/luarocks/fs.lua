@@ -14,13 +14,13 @@ package.loaded["luarocks.fs"] = fs
 local cfg = require("luarocks.core.cfg")
 
 local pack = table.pack or function(...) return { n = select("#", ...), ... } end
-local unpack = table.unpack or unpack
+local unpack = table.unpack or unpack -- luacheck: ignore
 
 local old_popen, old_exec
 fs.verbose = function()    -- patch io.popen and os.execute to display commands in verbose mode
   if old_popen or old_exec then return end
   old_popen = io.popen
-  io.popen = function(one, two)
+  io.popen = function(one, two) -- luacheck: ignore
     if two == nil then
       print("\nio.popen: ", one)
     else
@@ -30,7 +30,7 @@ fs.verbose = function()    -- patch io.popen and os.execute to display commands 
   end
   
   old_exec = os.execute
-  os.execute = function(cmd)
+  os.execute = function(cmd) -- luacheck: ignore
     -- redact api keys if present
     print("\nos.execute: ", (cmd:gsub("(/api/[^/]+/)([^/]+)/", function(cap, key) return cap.."<redacted>/" end)) )
     local code = pack(old_exec(cmd))

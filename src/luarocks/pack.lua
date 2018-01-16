@@ -80,8 +80,8 @@ function pack.pack_installed_rock(name, version, tree)
    assert(type(name) == "string")
    assert(type(version) == "string" or not version)
 
-   local repo, repo_url
-   name, version, repo, repo_url = search.pick_installed_rock(name, version, tree)
+   local _, repo_url
+   name, version, _, repo_url = search.pick_installed_rock(name, version, tree)
    if not name then
       return nil, version
    end

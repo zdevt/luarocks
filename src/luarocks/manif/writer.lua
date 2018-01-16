@@ -29,7 +29,7 @@ local function store_package_items(storage, name, version, items)
 
    local package_identifier = name.."/"..version
 
-   for item_name, path in pairs(items) do
+   for item_name, pathname in pairs(items) do
       if not storage[item_name] then
          storage[item_name] = {}
       end
@@ -53,7 +53,7 @@ local function remove_package_items(storage, name, version, items)
 
    local package_identifier = name.."/"..version
 
-   for item_name, path in pairs(items) do
+   for item_name, pathname in pairs(items) do
       local all_identifiers = storage[item_name]
 
       for i, identifier in ipairs(all_identifiers) do

@@ -125,7 +125,7 @@ local function check_macosx_deployment_target(rockspec)
    local function minor(version) 
       return tonumber(version and version:match("^[^.]+%.([^.]+)"))
    end
-   local function patch_variable(var, target)
+   local function patch_variable(var)
       if rockspec.variables[var]:match("MACOSX_DEPLOYMENT_TARGET") then
          rockspec.variables[var] = (rockspec.variables[var]):gsub("MACOSX_DEPLOYMENT_TARGET=[^ ]*", "MACOSX_DEPLOYMENT_TARGET="..target)
       else
@@ -139,8 +139,8 @@ local function check_macosx_deployment_target(rockspec)
       if targetminor > versionminor then
          return nil, ("This rock requires Mac OSX 10.%d, and you are running 10.%d."):format(targetminor, versionminor)
       end
-      patch_variable("CC", target)
-      patch_variable("LD", target)
+      patch_variable("CC")
+      patch_variable("LD")
    end
    return true
 end
@@ -182,7 +182,7 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
    if deps_mode == "none" then
       util.warning("skipping dependency checks.")
    else
-      local ok, err, errcode = deps.fulfill_dependencies(rockspec, deps_mode)
+      ok, err, errcode = deps.fulfill_dependencies(rockspec, deps_mode)
       if err then
          return nil, err, errcode
       end

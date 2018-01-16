@@ -16,8 +16,8 @@ math.randomseed(os.time())
 -- See http://lua-users.org/lists/lua-l/2013-11/msg00367.html
 local _prefix = "type NUL && "
 local _popen, _execute = io.popen, os.execute
-io.popen = function(cmd, ...) return _popen(_prefix..cmd, ...) end
-os.execute = function(cmd, ...) return _execute(_prefix..cmd, ...) end
+io.popen = function(cmd, ...) return _popen(_prefix..cmd, ...) end -- luacheck: ignore 122
+os.execute = function(cmd, ...) return _execute(_prefix..cmd, ...) end -- luacheck: ignore 122
 
 --- Annotate command string for quiet execution.
 -- @param cmd string: A command-line string.

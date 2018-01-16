@@ -3,7 +3,7 @@ local multipart = {}
 
 local File = {}
 
-local unpack = unpack or table.unpack
+local unpack = unpack or table.unpack -- luacheck: ignore
 
 math.randomseed(os.time())
 

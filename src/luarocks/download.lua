@@ -32,13 +32,13 @@ function download.download(arch, name, version, all)
       local has_result = false
       local all_ok = true
       local any_err = ""
-      for name, result in pairs(results) do
-         for version, items in pairs(result) do
+      for rname, result in pairs(results) do
+         for rversion, items in pairs(result) do
             for _, item in ipairs(items) do
                -- Ignore provided rocks.
                if item.arch ~= "installed" then
                   has_result = true
-                  local filename = path.make_url(item.repo, name, version, item.arch)
+                  local filename = path.make_url(item.repo, rname, rversion, item.arch)
                   local ok, err = get_file(filename)
                   if not ok then
                      all_ok = false
