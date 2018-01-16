@@ -124,7 +124,7 @@ end
 -- @return true/false boolean: status of the command execution
 local function execute_bool(command, print_command, env_variables)
    command = test_env.execute_helper(command, print_command, env_variables)
-   
+
    local redirect_filename
    local redirect = ""
    if print_command ~= nil then
@@ -132,13 +132,20 @@ local function execute_bool(command, print_command, env_variables)
       redirect = " > "..redirect_filename
       os.remove(redirect_filename)
    end
-   local ok = os.execute(command .. redirect)
+   local ok, status, code = os.execute(command .. redirect)
+   if ok == 99 or code == 99 then
+      return nil, "crash"
+   end
    ok = (ok == true or ok == 0) -- normalize Lua 5.1 output to boolean
    if redirect ~= "" then
       if not ok then
          local fd = io.open(redirect_filename, "r")
          if fd then
-            print(fd:read("*a"))
+            local output = fd:read("*a")
+            if output:match("LuaRocks dev bug") then
+               return nil, output
+            end
+            print(output)
             fd:close()
          end
       end
