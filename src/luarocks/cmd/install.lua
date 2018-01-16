@@ -29,6 +29,31 @@ or a filename of a locally available rock.
 --only-deps         Installs only the dependencies of the rock.
 ]]..util.deps_mode_help(nil, cfg.deps_mode)
 
+local function check_name(rock_file)
+   local name, version, arch = path.parse_name(rock_file)
+   if not name then
+      return nil, "Filename "..rock_file.." does not match format 'name-version-revision.arch.rock'."
+   end
+   
+   if arch ~= "all" and arch ~= cfg.arch then
+      return nil, "Incompatible architecture "..arch, "arch"
+   end
+   
+   return name, version
+end
+
+local function get_rockspec(rock_file, name, version)
+   local ok, err, errcode = fetch.fetch_and_unpack_rock(rock_file, path.install_dir(name, version))
+   if not ok then return nil, err, errcode end
+   
+   local rockspec
+   rockspec, err, errcode = fetch.load_rockspec(path.rockspec_file(name, version))
+   if not rockspec then
+      return nil, "Failed loading rockspec for installed package: "..err, errcode
+   end
+   
+   return rockspec
+end
 
 --- Install a binary rock.
 -- @param rock_file string: local or remote filename of a rock.
@@ -40,14 +65,9 @@ or a filename of a locally available rock.
 function install.install_binary_rock(rock_file, deps_mode)
    assert(type(rock_file) == "string")
 
-   local name, version, arch = path.parse_name(rock_file)
-   if not name then
-      return nil, "Filename "..rock_file.." does not match format 'name-version-revision.arch.rock'."
-   end
+   local name, version, errcode = check_name(rock_file)
+   if not name then return nil, version, errcode end
    
-   if arch ~= "all" and arch ~= cfg.arch then
-      return nil, "Incompatible architecture "..arch, "arch"
-   end
    if repos.is_installed(name, version) then
       repos.delete_version(name, version, deps_mode)
    end
@@ -57,34 +77,30 @@ function install.install_binary_rock(rock_file, deps_mode)
       fs.remove_dir_if_empty(path.versions_dir(name))
    end)
    
-   local ok, err, errcode = fetch.fetch_and_unpack_rock(rock_file, path.install_dir(name, version))
-   if not ok then return nil, err, errcode end
-   
-   local rockspec, err, errcode = fetch.load_rockspec(path.rockspec_file(name, version))
-   if err then
-      return nil, "Failed loading rockspec for installed package: "..err, errcode
-   end
+   local rockspec, err, ok
+   rockspec, err, errcode = get_rockspec(rock_file, name, version)
+   if not rockspec then return nil, err, errcode end
 
    if deps_mode == "none" then
       util.warning("skipping dependency checks.")
    else
       ok, err, errcode = deps.check_external_deps(rockspec, "install")
-      if err then return nil, err, errcode end
+      if not ok then return nil, err, errcode end
    end
 
    -- For compatibility with .rock files built with LuaRocks 1
    if not fs.exists(path.rock_manifest_file(name, version)) then
       ok, err = writer.make_rock_manifest(name, version)
-      if err then return nil, err end
+      if not ok then return nil, err end
    end
 
    if deps_mode ~= "none" then
       ok, err, errcode = deps.fulfill_dependencies(rockspec, deps_mode)
-      if err then return nil, err, errcode end
+      if not ok then return nil, err, errcode end
    end
 
    ok, err = repos.deploy_files(name, version, repos.should_wrap_bin_scripts(rockspec), deps_mode)
-   if err then return nil, err end
+   if not ok then return nil, err end
 
    util.remove_scheduled_function(rollback)
    rollback = util.schedule_function(function()
@@ -92,7 +108,7 @@ function install.install_binary_rock(rock_file, deps_mode)
    end)
 
    ok, err = repos.run_hook(rockspec, "post_install")
-   if err then return nil, err end
+   if not ok then return nil, err end
 
    util.announce_install(rockspec, cfg.rocks_dir)
    util.remove_scheduled_function(rollback)
@@ -110,25 +126,16 @@ end
 function install.install_binary_rock_deps(rock_file, deps_mode)
    assert(type(rock_file) == "string")
 
-   local name, version, arch = path.parse_name(rock_file)
-   if not name then
-      return nil, "Filename "..rock_file.." does not match format 'name-version-revision.arch.rock'."
-   end
-   
-   if arch ~= "all" and arch ~= cfg.arch then
-      return nil, "Incompatible architecture "..arch, "arch"
-   end
+   local name, version, errcode = check_name(rock_file)
+   if not name then return nil, version, errcode end
 
-   local ok, err, errcode = fetch.fetch_and_unpack_rock(rock_file, path.install_dir(name, version))
-   if not ok then return nil, err, errcode end
-   
-   local rockspec, err, errcode = fetch.load_rockspec(path.rockspec_file(name, version))
-   if err then
-      return nil, "Failed loading rockspec for installed package: "..err, errcode
-   end
+   local rockspec, err
+   rockspec, err, errcode = get_rockspec(rock_file, name, version)
+   if not rockspec then return nil, err, errcode end
 
+   local ok
    ok, err, errcode = deps.fulfill_dependencies(rockspec, deps_mode)
-   if err then return nil, err, errcode end
+   if not ok then return nil, err, errcode end
 
    util.printout()
    util.printout("Successfully installed dependencies for " ..name.." "..version)
