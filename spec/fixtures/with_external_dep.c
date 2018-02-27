@@ -1,4 +1,8 @@
+#ifdef NODEPS
+#define FOO 123
+#else
 #include <foo/foo.h>
+#endif
 #include <lua.h>
 #include <lauxlib.h>
 

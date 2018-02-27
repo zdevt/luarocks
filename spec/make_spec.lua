@@ -7,11 +7,11 @@ local env_variables = test_env.env_variables
 test_env.unload_luarocks()
 
 local extra_rocks = {
-   "/luasocket-3.0rc1-2.src.rock",
-   "/luasocket-3.0rc1-2.rockspec",
-   "/lpeg-0.12-1.src.rock",
-   "/lxsh-0.8.6-2.src.rock",
-   "/lxsh-0.8.6-2.rockspec"
+   "luasocket-3.0rc1-2.src.rock",
+   "luasocket-3.0rc1-2.rockspec",
+   "lpeg-0.12-1.src.rock",
+   "lxsh-0.8.6-2.src.rock",
+   "lxsh-0.8.6-2.rockspec"
 }
 
 describe("LuaRocks make tests #blackbox #b_make", function()
@@ -21,7 +21,7 @@ describe("LuaRocks make tests #blackbox #b_make", function()
    end)
 
    it("LuaRocks make with no flags/arguments", function()
-      lfs.chdir("test")
+      assert(lfs.chdir("testrun"))
       assert.is_false(run.luarocks_bool("make"))
       lfs.chdir(testing_paths.luarocks_dir)
    end)
@@ -35,7 +35,7 @@ describe("LuaRocks make tests #blackbox #b_make", function()
 
       -- test it
       assert.is_true(run.luarocks_bool("show luasocket"))
-      assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/luasocket/3.0rc1-2/luasocket-3.0rc1-2.rockspec"))
+      assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/luasocket/3.0rc1-2/luasocket-3.0rc1-2.rockspec"))
 
       -- delete downloaded and unpacked files
       lfs.chdir(testing_paths.luarocks_dir)
@@ -63,7 +63,7 @@ describe("LuaRocks make tests #blackbox #b_make", function()
          assert.is_true(run.luarocks_bool("make"))
 
          assert.is_true(run.luarocks_bool("show lxsh"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lxsh/0.8.6-3/lxsh-0.8.6-3.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lxsh/0.8.6-3/lxsh-0.8.6-3.rockspec"))
       end)
 
       it("LuaRocks make unnamed rockspec", function()
@@ -71,7 +71,7 @@ describe("LuaRocks make tests #blackbox #b_make", function()
          assert.is_true(run.luarocks_bool("make"))
 
          assert.is_true(run.luarocks_bool("show lxsh"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
          os.remove("rockspec")
       end)
       
@@ -81,7 +81,7 @@ describe("LuaRocks make tests #blackbox #b_make", function()
          assert.is.truthy(output:match("Error: Inconsistency between rockspec filename"))
 
          assert.is_false(run.luarocks_bool("show lxsh"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
       end)
 
       it("LuaRocks make ambiguous unnamed rockspec", function()
@@ -91,7 +91,7 @@ describe("LuaRocks make tests #blackbox #b_make", function()
          assert.is.truthy(output:match("Error: Please specify which rockspec file to use"))
 
          assert.is_false(run.luarocks_bool("show lxsh"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
       end)
       
       it("LuaRocks make pack binary rock", function()
@@ -112,58 +112,58 @@ describe("LuaRocks make tests #blackbox #b_make", function()
 
       it("modules with same name from lua/ and lib/ when upgrading", function()
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.1.0-1.rockspec"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
 
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.2.0-1.rockspec"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt.lua"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt.lua"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
       end)
 
       it("modules with same name from lua/ and lib/ when upgrading with --keep", function()
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.1.0-1.rockspec"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
 
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.2.0-1.rockspec --keep"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt.lua"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt.lua"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
       end)
 
       it("modules with same name from lua/ and lib/ when downgrading", function()
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.2.0-1.rockspec"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
 
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.1.0-1.rockspec"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt."..test_env.lib_extension))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt."..test_env.lib_extension))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
       end)
 
       it("modules with same name from lua/ and lib/ when downgrading with --keep", function()
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.2.0-1.rockspec"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
 
          assert.is_true(run.luarocks_bool("make mdt/mixed_deploy_type-0.1.0-1.rockspec --keep"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt.lua"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt."..test_env.lib_extension))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/lib/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt.lua"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mdt_file"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt.lua"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_tree .. "/share/lua/"..env_variables.LUA_VERSION.."/mixed_deploy_type_0_1_0_1-mdt_file"))
       end)
    end)
 end)

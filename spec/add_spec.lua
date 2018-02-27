@@ -5,8 +5,8 @@ local testing_paths = test_env.testing_paths
 test_env.unload_luarocks()
 
 local extra_rocks = {
-   "/luasocket-3.0rc1-2.src.rock",
-   "/luasocket-3.0rc1-2.rockspec"
+   "luasocket-3.0rc1-2.src.rock",
+   "luasocket-3.0rc1-2.rockspec"
 }
 
 describe("LuaRocks add tests #blackbox #b_add", function()

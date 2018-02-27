@@ -5,8 +5,8 @@ local testing_paths = test_env.testing_paths
 test_env.unload_luarocks()
 
 local extra_rocks = {
-   "/say-1.0-1.src.rock",
-   "/say-1.2-1.src.rock"
+   "say-1.0-1.src.rock",
+   "say-1.2-1.src.rock"
 }
 
 describe("LuaRocks list tests #blackbox #b_list", function()
@@ -22,7 +22,7 @@ describe("LuaRocks list tests #blackbox #b_list", function()
 
    it("LuaRocks list porcelain", function()
       local output = run.luarocks("list --porcelain")
-      assert.is.truthy(output:find("luacov\t0.11.0-1\tinstalled\t" .. testing_paths.testing_sys_rocks, 1, true))
+      assert.is.truthy(output:find("luacov\t0.11.0-1\tinstalled\t" .. testing_paths.testing_system_rocks, 1, true))
    end)
 
    it("LuaRocks install outdated and list it", function()

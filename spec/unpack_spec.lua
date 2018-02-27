@@ -5,9 +5,9 @@ local testing_paths = test_env.testing_paths
 test_env.unload_luarocks()
 
 local extra_rocks = {
-   "/cprint-0.1-2.src.rock",
-   "/cprint-0.1-2.rockspec",
-   "/luazip-1.2.4-1.rockspec"
+   "cprint-0.1-2.src.rock",
+   "cprint-0.1-2.rockspec",
+   "luazip-1.2.4-1.rockspec"
 }
 
 describe("LuaRocks unpack tests #blackbox #b_unpack", function()

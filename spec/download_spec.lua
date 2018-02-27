@@ -5,7 +5,7 @@ local run = test_env.run
 test_env.unload_luarocks()
 
 local extra_rocks = {
-   "/validate-args-1.5.4-1.rockspec"
+   "validate-args-1.5.4-1.rockspec"
 }
 
 describe("LuaRocks download tests #blackbox #b_download", function()

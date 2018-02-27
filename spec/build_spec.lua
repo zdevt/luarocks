@@ -6,26 +6,27 @@ local testing_paths = test_env.testing_paths
 test_env.unload_luarocks()
 
 local extra_rocks = test_env.mock_server_extra_rocks({
-   "/lmathx-20120430.51-1.src.rock",
-   "/lmathx-20120430.51-1.rockspec",
-   "/lmathx-20120430.52-1.src.rock",
-   "/lmathx-20120430.52-1.rockspec",
-   "/lmathx-20150505-1.src.rock",
-   "/lmathx-20150505-1.rockspec",
-   "/lpeg-1.0.0-1.rockspec",
-   "/lpeg-1.0.0-1.src.rock",
-   "/lpty-1.0.1-1.src.rock",
-   "/luadoc-3.0.1-1.src.rock",
-   "/luafilesystem-1.6.3-1.src.rock",
-   "/lualogging-1.3.0-1.src.rock",
-   "/luarepl-0.4-1.src.rock",
-   "/luasec-0.6-1.rockspec",
-   "/luasocket-3.0rc1-2.src.rock",
-   "/luasocket-3.0rc1-2.rockspec",
-   "/lxsh-0.8.6-2.src.rock",
-   "/lxsh-0.8.6-2.rockspec",
-   "/stdlib-41.0.0-1.src.rock",
-   "/validate-args-1.5.4-1.rockspec"
+   "lmathx-20120430.51-1.src.rock",
+   "lmathx-20120430.51-1.rockspec",
+   "lmathx-20120430.52-1.src.rock",
+   "lmathx-20120430.52-1.rockspec",
+   "lmathx-20150505-1.src.rock",
+   "lmathx-20150505-1.rockspec",
+   "lpeg-1.0.0-1.rockspec",
+   "lpeg-1.0.0-1.src.rock",
+   "lpty-1.0.1-1.src.rock",
+   "luadoc-3.0.1-1.src.rock",
+   "luafilesystem-1.6.3-1.src.rock",
+   "lualogging-1.3.0-1.src.rock",
+   "luarepl-0.4-1.src.rock",
+   "luasec-0.6-1.rockspec",
+   "luasocket-3.0rc1-2.src.rock",
+   "luasocket-3.0rc1-2.rockspec",
+   "lxsh-0.8.6-2.src.rock",
+   "lxsh-0.8.6-2.rockspec",
+   "stdlib-41.0.0-1.src.rock",
+   "validate-args-1.5.4-1.rockspec",
+   "./with_external_dep-0.1-1.rockspec",
 })
 
 describe("LuaRocks build tests #blackbox #b_build", function()
@@ -63,22 +64,22 @@ describe("LuaRocks build tests #blackbox #b_build", function()
       
       it("LuaRocks build lpeg branch=master", function()
          assert.is_true(run.luarocks_bool("build --branch=master lpeg"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
       end)
       
       it("LuaRocks build lpeg deps-mode=123", function()
          assert.is_false(run.luarocks_bool("build --deps-mode=123 lpeg --verbose"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
       end)
       
       it("LuaRocks build lpeg only-sources example", function()
          assert.is_true(run.luarocks_bool("download --rockspec lpeg"))
          assert.is_false(run.luarocks_bool("build --only-sources=\"http://example.com\" lpeg-1.0.0-1.rockspec"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
 
          assert.is_true(run.luarocks_bool("download --source lpeg"))
          assert.is_true(run.luarocks_bool("build --only-sources=\"http://example.com\" lpeg-1.0.0-1.src.rock"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
 
          assert.is_true(os.remove("lpeg-1.0.0-1.rockspec"))
          assert.is_true(os.remove("lpeg-1.0.0-1.src.rock"))
@@ -86,7 +87,7 @@ describe("LuaRocks build tests #blackbox #b_build", function()
       
       it("LuaRocks build lpeg with empty tree", function()
          assert.is_false(run.luarocks_bool("build --tree=\"\" lpeg"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
       end)
    end)
 
@@ -97,17 +98,17 @@ describe("LuaRocks build tests #blackbox #b_build", function()
       
       it("LuaRocks build luacov diff version", function()
          assert.is_true(run.luarocks_bool("build luacov 0.11.0-1"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/luacov/0.11.0-1/luacov-0.11.0-1.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/luacov/0.11.0-1/luacov-0.11.0-1.rockspec"))
       end)
       
       it("LuaRocks build command stdlib", function()
          assert.is_true(run.luarocks_bool("build stdlib"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/stdlib/41.0.0-1/stdlib-41.0.0-1.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/stdlib/41.0.0-1/stdlib-41.0.0-1.rockspec"))
       end)
       
       it("LuaRocks build install bin luarepl", function()
          assert.is_true(run.luarocks_bool("build luarepl"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/luarepl/0.4-1/luarepl-0.4-1.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/luarepl/0.4-1/luarepl-0.4-1.rockspec"))
       end)
       
       it("LuaRocks build supported platforms lpty", function()
@@ -115,24 +116,19 @@ describe("LuaRocks build tests #blackbox #b_build", function()
             assert.is_false(run.luarocks_bool("build lpty")) --Error: This rockspec for lpty does not support win32, windows platforms
          else
             assert.is_true(run.luarocks_bool("build lpty"))
-            assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpty/1.0.1-1/lpty-1.0.1-1.rockspec"))
+            assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpty/1.0.1-1/lpty-1.0.1-1.rockspec"))
          end
-      end)
-      
-      it("LuaRocks build luasec with skipping dependency checks", function()
-         assert.is_true(run.luarocks_bool("build luasec " .. test_env.OPENSSL_DIRS .. " --nodeps"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/luasec/0.6-1/luasec-0.6-1.rockspec"))
       end)
       
       it("LuaRocks build lmathx deps partial match", function()
          assert.is_true(run.luarocks_bool("build lmathx"))
 
          if test_env.LUA_V == "5.1" or test_env.LUAJIT_V then
-            assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lmathx/20120430.51-1/lmathx-20120430.51-1.rockspec"))
+            assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lmathx/20120430.51-1/lmathx-20120430.51-1.rockspec"))
          elseif test_env.LUA_V == "5.2" then
-            assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lmathx/20120430.52-1/lmathx-20120430.52-1.rockspec"))
+            assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lmathx/20120430.52-1/lmathx-20120430.52-1.rockspec"))
          elseif test_env.LUA_V == "5.3" then
-            assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lmathx/20150505-1/lmathx-20150505-1.rockspec"))
+            assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lmathx/20150505-1/lmathx-20150505-1.rockspec"))
          end
       end)
    end)
@@ -148,15 +144,15 @@ describe("LuaRocks build tests #blackbox #b_build", function()
       it("LuaRocks build luasec only deps", function()
          assert.is_true(run.luarocks_bool("build luasec " .. test_env.OPENSSL_DIRS .. " --only-deps"))
          assert.is_false(run.luarocks_bool("show luasec"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/luasec/0.6-1/luasec-0.6-1.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/luasec/0.6-1/luasec-0.6-1.rockspec"))
       end)
       
       it("LuaRocks build only deps of downloaded rockspec of lxsh", function()
          assert.is_true(run.luarocks_bool("download --rockspec lxsh 0.8.6-2"))
          assert.is.truthy(run.luarocks("build lxsh-0.8.6-2.rockspec --only-deps"))
          assert.is_false(run.luarocks_bool("show lxsh"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
          assert.is_true(os.remove("lxsh-0.8.6-2.rockspec"))
       end)
 
@@ -164,28 +160,28 @@ describe("LuaRocks build tests #blackbox #b_build", function()
          assert.is_true(run.luarocks_bool("download --source lxsh 0.8.6-2"))
          assert.is.truthy(run.luarocks("build lxsh-0.8.6-2.src.rock --only-deps"))
          assert.is_false(run.luarocks_bool("show lxsh"))
-         assert.is.falsy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
+         assert.is.falsy(lfs.attributes(testing_paths.testing_system_rocks .. "/lxsh/0.8.6-2/lxsh-0.8.6-2.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/lpeg/1.0.0-1/lpeg-1.0.0-1.rockspec"))
          assert.is_true(os.remove("lxsh-0.8.6-2.src.rock"))
       end)
 
-      it("LuaRocks build no https", function()
+      it("#network LuaRocks build no https", function()
          assert.is_true(run.luarocks_bool("download --rockspec validate-args 1.5.4-1"))
          assert.is_true(run.luarocks_bool("build validate-args-1.5.4-1.rockspec"))
 
          assert.is.truthy(run.luarocks("show validate-args"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/validate-args/1.5.4-1/validate-args-1.5.4-1.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/validate-args/1.5.4-1/validate-args-1.5.4-1.rockspec"))
 
          assert.is_true(os.remove("validate-args-1.5.4-1.rockspec"))
       end)
       
-      it("LuaRocks build with https", function()
+      it("#network LuaRocks build with https", function()
          assert.is_true(run.luarocks_bool("download --rockspec validate-args 1.5.4-1"))
          assert.is_true(run.luarocks_bool("install luasec " .. test_env.OPENSSL_DIRS))
          
          assert.is_true(run.luarocks_bool("build validate-args-1.5.4-1.rockspec"))
          assert.is.truthy(run.luarocks("show validate-args"))
-         assert.is.truthy(lfs.attributes(testing_paths.testing_sys_rocks .. "/validate-args/1.5.4-1/validate-args-1.5.4-1.rockspec"))
+         assert.is.truthy(lfs.attributes(testing_paths.testing_system_rocks .. "/validate-args/1.5.4-1/validate-args-1.5.4-1.rockspec"))
          assert.is_true(os.remove("validate-args-1.5.4-1.rockspec"))
       end)
 
@@ -212,6 +208,30 @@ describe("LuaRocks build tests #blackbox #b_build", function()
          local foo_incdir = testing_paths.fixtures_dir .. "/with_external_dep"
          assert.is_truthy(run.luarocks_bool("build " .. rockspec .. " FOO_INCDIR=\"" .. foo_incdir .. "\""))
          assert.is.truthy(run.luarocks("show with_external_dep"))
+         assert.match("42", run.lua [[
+            with_external_dep = require('with_external_dep')
+            print(with_external_dep.foo)
+         ]])
+      end)
+
+      it("builds with indirect external dependency", function()
+         local rockspec = testing_paths.fixtures_dir .. "/with_dep-0.1-1.rockspec"
+         local foo_incdir = testing_paths.fixtures_dir .. "/with_external_dep"
+         assert.is_truthy(run.luarocks_bool("build " .. rockspec .. " --server=" .. testing_paths.fixtures_dir .. " FOO_INCDIR=\"" .. foo_incdir .. "\""))
+         assert.is.truthy(run.luarocks("show with_external_dep"))
+         assert.is.truthy(run.luarocks("show with_dep"))
+         assert.match("42", run.lua [[
+            require('with_dep')
+         ]])
+      end)
+
+      it("builds skiping dependency", function()
+         local rockspec = testing_paths.fixtures_dir .. "/with_dep-0.1-1.rockspec"
+         assert.is_truthy(run.luarocks_bool("build " .. rockspec .. " --nodeps"))
+         assert.is.truthy(run.luarocks("show with_dep"))
+         assert.match("100", run.lua [[
+            require('with_dep')
+         ]])
       end)
    end)
 
