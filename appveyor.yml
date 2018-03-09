@@ -42,7 +42,7 @@ before_build:
   - call lua_install\bin\activate
 
 build_script:
-  - luarocks install busted 1> NUL 2> NUL
+  - luarocks install busted
   - luarocks install cluacov 1> NUL 2> NUL
 
 test_script:
