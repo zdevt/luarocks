@@ -6,7 +6,8 @@ local fs = require("luarocks.fs")
 local dir = require("luarocks.dir")
 local type_rockspec = require("luarocks.type.rockspec")
 local path = require("luarocks.path")
-local vers = require("luarocks.vers")
+local vers = require("luarocks.core.vers")
+local queries = require("luarocks.queries")
 local persist = require("luarocks.persist")
 local util = require("luarocks.util")
 local cfg = require("luarocks.core.cfg")
@@ -179,6 +180,20 @@ function fetch.url_to_base_dir(url)
    return (base:gsub("%.([^.]*)$", known_exts):gsub("%.tar", ""))
 end
 
+local function convert_dependencies(rockspec, key)
+   if rockspec[key] then
+      for i = 1, #rockspec[key] do
+         local parsed, err = queries.from_dep_string(rockspec[key][i])
+         if not parsed then
+            return nil, "Parse error processing dependency '"..rockspec[key][i].."': "..tostring(err)
+         end
+         rockspec[key][i] = parsed
+      end
+   else
+      rockspec[key] = {}
+   end
+end
+
 --- Back-end function that actually loads the local rockspec.
 -- Performs some validation and postprocessing of the rockspec contents.
 -- @param filename string: The local filename of the rockspec file.
@@ -210,14 +225,26 @@ function fetch.load_local_rockspec(filename, quick)
          return nil, filename..": "..err
       end
    end
-   
-   rockspec.format_is_at_least = vers.format_is_at_least
+
+   --- Check if rockspec format version satisfies version requirement.
+   -- @param rockspec table: The rockspec table.
+   -- @param version string: required version.
+   -- @return boolean: true if rockspec format matches version or is newer, false otherwise.
+   do
+      local parsed_format = vers.parse_version(rockspec.rockspec_format or "1.0")
+      rockspec.format_is_at_least = function(self, version)
+         return parsed_format >= vers.parse_version(version)
+      end
+   end
 
    util.platform_overrides(rockspec.build)
    util.platform_overrides(rockspec.dependencies)
+   util.platform_overrides(rockspec.build_dependencies)
+   util.platform_overrides(rockspec.test_dependencies)
    util.platform_overrides(rockspec.external_dependencies)
    util.platform_overrides(rockspec.source)
    util.platform_overrides(rockspec.hooks)
+   util.platform_overrides(rockspec.test)
 
    local basename = dir.base_name(filename)
    if basename == "rockspec" then
@@ -260,17 +287,10 @@ function fetch.load_local_rockspec(filename, quick)
                               and cfg.rocks_provided_3_0
                               or  cfg.rocks_provided)
 
-   if rockspec.dependencies then
-      for i = 1, #rockspec.dependencies do
-         local parsed, err = vers.parse_dep(rockspec.dependencies[i])
-         if not parsed then
-            return nil, "Parse error processing dependency '"..rockspec.dependencies[i].."': "..tostring(err)
-         end
-         rockspec.dependencies[i] = parsed
-      end
-   else
-      rockspec.dependencies = {}
-   end
+   convert_dependencies(rockspec, "dependencies")
+   convert_dependencies(rockspec, "build_dependencies")
+   convert_dependencies(rockspec, "test_dependencies")
+
    if not quick then
       path.configure_paths(rockspec)
    end

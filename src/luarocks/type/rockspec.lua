@@ -39,7 +39,32 @@ local rockspec_types = {
    },
    dependencies = {
       platforms = {}, -- recursively defined below
-      _any = string_1,
+      _any = {
+         _type = "string",
+         _name = "a valid dependency string",
+         _patterns = {
+            ["1.0"] = "%s*([a-zA-Z0-9][a-zA-Z0-9%.%-%_]*)%s*([^/]*)",
+            ["3.0"] = "%s*([a-zA-Z0-9%.%-%_]*/?[a-zA-Z0-9][a-zA-Z0-9%.%-%_]*)%s*([^/]*)",
+         },
+      },
+   },
+   build_dependencies = {
+      _version = "3.0",
+      platforms = {}, -- recursively defined below
+      _any = {
+         _type = "string",
+         _name = "a valid dependency string",
+         _pattern = "%s*([a-zA-Z0-9%.%-%_]*/?[a-zA-Z0-9][a-zA-Z0-9%.%-%_]*)%s*([^/]*)",
+      },
+   },
+   test_dependencies = {
+      _version = "3.0",
+      platforms = {}, -- recursively defined below
+      _any = {
+         _type = "string",
+         _name = "a valid dependency string",
+         _pattern = "%s*([a-zA-Z0-9%.%-%_]*/?[a-zA-Z0-9][a-zA-Z0-9%.%-%_]*)%s*([^/]*)",
+      },
    },
    supported_platforms = {
       _any = string_1,
@@ -88,6 +113,12 @@ local rockspec_types = {
       _more = true,
       _mandatory = true
    },
+   test = {
+      _version = "3.0",
+      platforms = {}, -- recursively defined below
+      type = string_1,
+      _more = true,
+   },
    hooks = {
       platforms = {}, -- recursively defined below
       post_install = string_1,
@@ -101,15 +132,18 @@ local rockspec_types = {
 type_rockspec.order = {"rockspec_format", "package", "version", 
    { "source", { "url", "tag", "branch", "md5" } },
    { "description", {"summary", "detailed", "homepage", "license" } },
-   "supported_platforms", "dependencies", "external_dependencies",
+   "supported_platforms", "dependencies", "build_dependencies", "external_dependencies",
    { "build", {"type", "modules", "copy_directories", "platforms"} },
+   "test_dependencies", { "test", {"type"} },
    "hooks"}
 
 rockspec_types.build.platforms._any = rockspec_types.build
 rockspec_types.dependencies.platforms._any = rockspec_types.dependencies
+rockspec_types.build_dependencies.platforms._any = rockspec_types.build_dependencies
 rockspec_types.external_dependencies.platforms._any = rockspec_types.external_dependencies
 rockspec_types.source.platforms._any = rockspec_types.source
 rockspec_types.hooks.platforms._any = rockspec_types.hooks
+rockspec_types.test.platforms._any = rockspec_types.test
 
 --- Type check a rockspec table.
 -- Verify the correctness of elements from a 
@@ -123,8 +157,13 @@ function type_rockspec.check(rockspec, globals)
       rockspec.rockspec_format = "1.0"
    end
    local ok, err = type_check.check_undeclared_globals(globals, rockspec_types)
-   if not ok then return nil, err end
-   return type_check.type_check_table(rockspec.rockspec_format, rockspec, rockspec_types, "")
+   if ok then
+      ok, err = type_check.type_check_table(rockspec.rockspec_format, rockspec, rockspec_types, "")
+   end
+   if ok then
+      return true
+   end
+   return nil, err .. " (rockspec format " .. rockspec.rockspec_format .. ")"
 end
 
 return type_rockspec

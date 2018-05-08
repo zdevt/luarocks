@@ -1,5 +1,6 @@
-local lfs = require("lfs")
 local test_env = {}
+
+local lfs = require("lfs")
 
 local help_message = [[
 LuaRocks test-suite
@@ -98,15 +99,30 @@ function test_env.execute_helper(command, print_command, env_variables)
    if print_command then 
       print("[EXECUTING]: " .. command)
    end
+   
+   local unset_variables = {
+      "LUA_PATH",
+      "LUA_CPATH",
+      "LUA_PATH_5_2",
+      "LUA_CPATH_5_2",
+      "LUA_PATH_5_3",
+      "LUA_CPATH_5_3",
+   }
 
    if env_variables then
       if test_env.TEST_TARGET_OS == "windows" then
+         for _, k in ipairs(unset_variables) do
+            final_command = final_command .. "set " .. k .. "=&"
+         end
          for k,v in pairs(env_variables) do
             final_command = final_command .. "set " .. k .. "=" .. v .. "&"
          end
          final_command = final_command:sub(1, -2) .. "&"
       else
-         final_command = "export "
+         for _, k in ipairs(unset_variables) do
+            final_command = final_command .. "unset " .. k .. "; "
+         end
+         final_command = final_command .. "export "
          for k,v in pairs(env_variables) do
             final_command = final_command .. k .. "='" .. v .. "' "
          end
@@ -118,6 +134,11 @@ function test_env.execute_helper(command, print_command, env_variables)
    final_command = final_command .. command .. " 2>&1"
 
    return final_command
+end
+
+function test_env.execute(cmd)
+   local ok = os.execute(cmd)
+   return (ok == true or ok == 0) -- normalize Lua 5.1 output to boolean
 end
 
 --- Execute command and returns true/false
@@ -132,10 +153,9 @@ local function execute_bool(command, print_command, env_variables)
       redirect = " > "..redirect_filename
       os.remove(redirect_filename)
    end
-   local ok = os.execute(command .. redirect)
-   ok = (ok == true or ok == 0) -- normalize Lua 5.1 output to boolean
+   local ok = test_env.execute(command .. redirect)
    if redirect ~= "" then
-      if not ok then
+      if not ok or test_env.VERBOSE then
          local fd = io.open(redirect_filename, "r")
          if fd then
             print(fd:read("*a"))
@@ -155,7 +175,7 @@ local function execute_output(command, print_command, env_variables)
    local file = assert(io.popen(command))
    local output = file:read('*all')
    file:close()
-   return output:gsub("\n","") -- output adding new line, need to be removed
+   return (output:gsub("\r\n", "\n"):gsub("\n$", "")) -- remove final newline
 end
 
 --- Set test_env.LUA_V or test_env.LUAJIT_V based
@@ -304,9 +324,9 @@ local function download_rocks(urls, save_path)
       -- check if already downloaded
       if not test_env.exists(save_path .. url) then
          if test_env.TEST_TARGET_OS == "windows" then
-            execute_bool(test_env.testing_paths.win_tools .. "/wget -cP " .. save_path .. " " .. luarocks_repo .. url .. " --no-check-certificate")
+            assert(execute_bool(test_env.testing_paths.win_tools .. "/wget -cP " .. save_path .. " " .. luarocks_repo .. url .. " --no-check-certificate"))
          else
-            execute_bool("wget -cP " .. save_path .. " " .. luarocks_repo .. url)
+            assert(execute_bool("wget -cP " .. save_path .. " " .. luarocks_repo .. url))
          end
          make_manifest = true 
       end
@@ -328,7 +348,7 @@ end
 -- @return md5sum string: md5sum of directory
 local function hash_environment(path)
    if test_env.TEST_TARGET_OS == "linux" then
-      return execute_output("find " .. path .. " -printf \"%s %p\n\" | md5sum")
+      return execute_output("cd " .. path .. " && find . -printf \"%s %p\n\"")
    elseif test_env.TEST_TARGET_OS == "osx" then
       return execute_output("find " .. path .. " -type f -exec stat -f \"%z %N\" {} \\; | md5")
    elseif test_env.TEST_TARGET_OS == "windows" then
@@ -479,16 +499,17 @@ local function create_paths(luaversion_full)
       testing_paths.luarocks_tmp = "/tmp/luarocks_testing"
    end
 
-   testing_paths.luarocks_dir = lfs.currentdir()
+   local base_dir = lfs.currentdir()
 
    if test_env.TEST_TARGET_OS == "windows" then
-      testing_paths.luarocks_dir = testing_paths.luarocks_dir:gsub("\\","/")
+      base_dir = base_dir:gsub("\\","/")
    end
 
-   testing_paths.fixtures_dir = testing_paths.luarocks_dir .. "/spec/fixtures"
-   testing_paths.util_dir = testing_paths.luarocks_dir .. "/spec/util"
-   testing_paths.testrun_dir = testing_paths.luarocks_dir .. "/testrun"
-   testing_paths.src_dir = testing_paths.luarocks_dir .. "/src"
+   testing_paths.fixtures_dir = base_dir .. "/spec/fixtures"
+   testing_paths.fixtures_repo_dir = base_dir .. "/spec/fixtures/a_repo"
+   testing_paths.util_dir = base_dir .. "/spec/util"
+   testing_paths.testrun_dir = base_dir .. "/testrun"
+   testing_paths.src_dir = base_dir .. "/src"
    testing_paths.testing_lrprefix = testing_paths.testrun_dir .. "/testing_lrprefix-" .. luaversion_full
    testing_paths.testing_tree = testing_paths.testrun_dir .. "/testing-" .. luaversion_full
    testing_paths.testing_tree_copy = testing_paths.testrun_dir .. "/testing_copy-" .. luaversion_full
@@ -515,9 +536,13 @@ function test_env.unload_luarocks()
          package.loaded[modname] = nil
       end
    end
+   local src_pattern = test_env.testing_paths.src_dir .. "/?.lua"
+   if not package.path:find(src_pattern, 1, true) then
+      package.path = src_pattern .. ";" .. package.path
+   end
 end
 
---- Function for initially setup of environment, variables, md5sums for spec files
+--- Function for initial setup of environment, variables, md5sums for spec files
 function test_env.setup_specs(extra_rocks)
    -- if global variable about successful creation of testing environment doesn't exist, build environment
    if not test_env.setup_done then
@@ -531,6 +556,10 @@ function test_env.setup_specs(extra_rocks)
       end
 
       test_env.main()
+      
+      -- preload before meddling with package.path
+      require("spec.util.git_repo")
+
       package.path = test_env.env_variables.LUA_PATH
 
       test_env.platform = execute_output(test_env.testing_paths.lua .. " -e \"print(require('luarocks.core.cfg').arch)\"", false, test_env.env_variables)
@@ -551,6 +580,8 @@ function test_env.setup_specs(extra_rocks)
    if test_env.RESET_ENV then
       reset_environment(test_env.testing_paths, test_env.md5sums, test_env.env_variables)
    end
+   
+   lfs.chdir(test_env.testing_paths.testrun_dir)
 end
 
 --- Test if required rock is installed and if not, install it.
@@ -561,7 +592,11 @@ function test_env.need_rock(rock)
    if test_env.run.luarocks_noprint_nocov(test_env.quiet("show " .. rock)) then
       return true
    else
-      return test_env.run.luarocks_noprint_nocov(test_env.quiet("install " .. rock))
+      local ok = test_env.run.luarocks_noprint_nocov(test_env.quiet("install " .. rock))
+      if not ok then
+         print("WARNING: failed installing " .. rock)
+      end
+      return ok
    end
 end
 
@@ -727,11 +762,11 @@ function test_env.mock_server_extra_rocks(more)
 end
 
 function test_env.mock_server_init()
-   local assert = require("luassert")
    local testing_paths = test_env.testing_paths
-   assert.is_true(test_env.need_rock("restserver-xavante"))
-   local final_command = test_env.execute_helper(testing_paths.lua .. " " .. testing_paths.util_dir .. "/mock-server.lua &", true, test_env.env_variables)
+   assert(test_env.need_rock("restserver-xavante"))
+   local final_command = test_env.execute_helper(testing_paths.lua .. " " .. testing_paths.util_dir .. "/mock-server.lua " .. testing_paths.fixtures_dir .. " &", true, test_env.env_variables)
    os.execute(final_command)
+   os.execute("sleep 1")
 end
 
 function test_env.mock_server_done()

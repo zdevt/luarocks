@@ -21,8 +21,8 @@ end
 function Api:load_config()
    local upload_conf = upload_config_file()
    if not upload_conf then return nil end
-   local cfg, err = persist.load_into_table(upload_conf)
-   return cfg
+   local config, err = persist.load_into_table(upload_conf)
+   return config
 end
 
 function Api:save_config()
@@ -272,7 +272,7 @@ function api.new(flags)
    self.config = self:load_config() or {}
    self.config.server = flags["server"] or self.config.server or cfg.upload.server
    self.config.version = self.config.version or cfg.upload.version
-   self.config.key = flags["api-key"] or self.config.key
+   self.config.key = flags["temp-key"] or flags["api-key"] or self.config.key
    self.debug = flags["debug"]
    if not self.config.key then
       return nil, "You need an API key to upload rocks.\n" ..

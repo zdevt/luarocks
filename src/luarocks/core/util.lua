@@ -45,14 +45,14 @@ end
 -- Written by Julio Manuel Fernandez-Diaz,
 -- Heavily based on "Saving tables with cycles", PIL2, p. 113.
 -- @param t table: is the table.
--- @param name string: is the name of the table (optional)
--- @param indent string: is a first indentation (optional).
+-- @param tname string: is the name of the table (optional)
+-- @param top_indent string: is a first indentation (optional).
 -- @return string: the pretty-printed table
-function util.show_table(t, name, indent)
+function util.show_table(t, tname, top_indent)
    local cart     -- a container
    local autoref  -- for self references
 
-   local function is_empty_table(t) return next(t) == nil end
+   local function is_empty_table(tbl) return next(tbl) == nil end
    
    local function basic_serialize (o)
       local so = tostring(o)
@@ -87,7 +87,6 @@ function util.show_table(t, name, indent)
             autoref = autoref ..  name .. " = " .. saved[value] .. ";\n"
          else
             saved[value] = name
-            --if tablecount(value) == 0 then
             if is_empty_table(value) then
                cart = cart .. " = {};\n"
             else
@@ -105,12 +104,12 @@ function util.show_table(t, name, indent)
       end
    end
    
-   name = name or "__unnamed__"
+   tname = tname or "__unnamed__"
    if type(t) ~= "table" then
-      return name .. " = " .. basic_serialize(t)
+      return tname .. " = " .. basic_serialize(t)
    end
    cart, autoref = "", ""
-   add_to_cart(t, name, indent)
+   add_to_cart(t, tname, top_indent)
    return cart .. autoref
 end
 
@@ -202,6 +201,12 @@ end
 function util.printerr(...)
    io.stderr:write(table.concat({...},"\t"))
    io.stderr:write("\n")
+end
+
+--- Display a warning message.
+-- @param msg string: the warning message
+function util.warning(msg)
+   util.printerr("Warning: "..msg)
 end
 
 --- Simple sort function used as a default for util.sortedpairs.

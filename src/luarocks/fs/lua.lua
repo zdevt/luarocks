@@ -9,7 +9,6 @@ local fs = require("luarocks.fs")
 local cfg = require("luarocks.core.cfg")
 local dir = require("luarocks.dir")
 local util = require("luarocks.util")
-local path = require("luarocks.path")
 
 local socket_ok, zip_ok, unzip_ok, lfs_ok, md5_ok, posix_ok, _
 local http, ftp, lrzip, luazip, lfs, md5, posix
@@ -324,6 +323,9 @@ local function recursive_copy(src, dest, perms)
       local subdir = dir.path(dest, dir.base_name(src))
       local ok, err = fs.make_dir(subdir)
       if not ok then return nil, err end
+      if pcall(lfs.dir, src) == false then
+         return false
+      end
       for file in lfs.dir(src) do
          if file ~= "." and file ~= ".." then
             local ok = recursive_copy(dir.path(src, file), subdir, perms)
@@ -337,15 +339,19 @@ end
 --- Recursively copy the contents of a directory.
 -- @param src string: Pathname of source
 -- @param dest string: Pathname of destination
--- @param perms string or nil: Optional permissions. 
+-- @param perms string or nil: Optional permissions.
 -- @return boolean or (boolean, string): true on success, false on failure,
 -- plus an error message.
 function fs_lua.copy_contents(src, dest, perms)
    assert(src and dest)
    src = dir.normalize(src)
    dest = dir.normalize(dest)
-   assert(lfs.attributes(src, "mode") == "directory")
-
+   if not fs.is_dir(src) then
+      return false, src .. " is not a directory"
+   end
+   if pcall(lfs.dir, src) == false then
+      return false, "Permission denied"
+   end
    for file in lfs.dir(src) do
       if file ~= "." and file ~= ".." then
          local ok = recursive_copy(dir.path(src, file), dest, perms)
@@ -540,14 +546,14 @@ local redirect_protocols = {
 
 local function request(url, method, http, loop_control)
    local result = {}
-   
+
    local proxy = cfg.http_proxy
    if type(proxy) ~= "string" then proxy = nil end
    -- LuaSocket's http.request crashes when given URLs missing the scheme part.
    if proxy and not proxy:find("://") then
       proxy = "http://" .. proxy
    end
-   
+
    if cfg.show_downloads then
       io.write(method.." "..url.." ...\n")
    end
@@ -609,7 +615,7 @@ end
 -- @param http table: The library to use (http from LuaSocket or LuaSec)
 -- @param cache boolean: Whether to use a `.timestamp` file to check
 -- via the HTTP Last-Modified header if the full download is needed.
--- @return (boolean | (nil, string, string?)): True if successful, or 
+-- @return (boolean | (nil, string, string?)): True if successful, or
 -- nil, error message and optionally HTTPS error in case of errors.
 local function http_request(url, filename, http, cache)
    if cache then
@@ -788,16 +794,21 @@ function fs_lua.current_user()
    return posix.getpwuid(posix.geteuid()).pw_name
 end
 
+-- This call is not available on all systems, see #677
+if posix.mkdtemp then
+
 --- Create a temporary directory.
--- @param name string: name pattern to use for avoiding conflicts
+-- @param name_pattern string: name pattern to use for avoiding conflicts
 -- when creating temporary directory.
 -- @return string or (nil, string): name of temporary directory or (nil, error message) on failure.
-function fs_lua.make_temp_dir(name)
-   assert(type(name) == "string")
-   name = dir.normalize(name)
+function fs_lua.make_temp_dir(name_pattern)
+   assert(type(name_pattern) == "string")
+   name_pattern = dir.normalize(name_pattern)
 
-   return posix.mkdtemp((os.getenv("TMPDIR") or "/tmp") .. "/luarocks_" .. name:gsub("/", "_") .. "-XXXXXX")
+   return posix.mkdtemp((os.getenv("TMPDIR") or "/tmp") .. "/luarocks_" .. name_pattern:gsub("/", "_") .. "-XXXXXX")
 end
+
+end -- if posix.mkdtemp
 
 end
 
@@ -888,14 +899,14 @@ end
 --- Check whether a file is a Lua script
 -- When the file can be succesfully compiled by the configured
 -- Lua interpreter, it's considered to be a valid Lua file.
--- @param name filename of file to check
+-- @param filename filename of file to check
 -- @return boolean true, if it is a Lua script, false otherwise
-function fs_lua.is_lua(name)
-  name = name:gsub([[%\]],"/")   -- normalize on fw slash to prevent escaping issues
+function fs_lua.is_lua(filename)
+  filename = filename:gsub([[%\]],"/")   -- normalize on fw slash to prevent escaping issues
   local lua = fs.Q(dir.path(cfg.variables["LUA_BINDIR"], cfg.lua_interpreter))  -- get lua interpreter configured
   -- execute on configured interpreter, might not be the same as the interpreter LR is run on
-  local result = fs.execute_string(lua..[[ -e "if loadfile(']]..name..[[') then os.exit() else os.exit(1) end"]])
-  return (result == true) 
+  local result = fs.execute_string(lua..[[ -e "if loadfile(']]..filename..[[') then os.exit() else os.exit(1) end"]])
+  return (result == true)
 end
 
 return fs_lua

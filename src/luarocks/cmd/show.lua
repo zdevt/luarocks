@@ -2,11 +2,11 @@
 -- Shows information about an installed rock.
 local show = {}
 
+local queries = require("luarocks.queries")
 local search = require("luarocks.search")
 local cfg = require("luarocks.core.cfg")
 local util = require("luarocks.util")
 local path = require("luarocks.path")
-local vers = require("luarocks.vers")
 local fetch = require("luarocks.fetch")
 local manif = require("luarocks.manif")
 local repos = require("luarocks.repos")
@@ -18,13 +18,15 @@ show.help = [[
 Without any flags, show all module information.
 With these flags, return only the desired information:
 
---home      home page of project
---modules   all modules provided by this package as used by require()
---deps      packages this package depends on
---rockspec  the full path of the rockspec file
---mversion  the package version
---rock-tree local tree where rock is installed
---rock-dir  data directory of the installed rock
+--home       home page of project
+--modules    all modules provided by this package as used by require()
+--deps       packages this package depends on
+--build-deps build-only dependencies for this package
+--test-deps  dependencies for testing this package
+--rockspec   the full path of the rockspec file
+--mversion   the package version
+--rock-tree  local tree where rock is installed
+--rock-dir   data directory of the installed rock
 ]]
 
 local function keys_as_string(t, sep)
@@ -57,12 +59,12 @@ local function format_text(text)
    return (table.concat(paragraphs, "\n\n"):gsub("%s$", ""))
 end
 
-local function installed_rock_label(name, tree)
+local function installed_rock_label(dep, tree)
    local installed, version
-   if cfg.rocks_provided[name] then
-      installed, version = true, cfg.rocks_provided[name]
+   if cfg.rocks_provided[dep.name] then
+      installed, version = true, cfg.rocks_provided[dep.name]
    else
-      installed, version = search.pick_installed_rock(name, nil, tree)
+      installed, version = search.pick_installed_rock(dep, tree)
    end
    return installed and "(using "..version..")" or "(missing)"
 end
@@ -81,14 +83,18 @@ function show.command(flags, name, version)
    if not name then
       return nil, "Argument missing. "..util.see_help("show")
    end
+
+   name = util.adjust_name_and_namespace(name, flags)
+   local query = queries.new(name, version)
    
    local repo, repo_url
-   name, version, repo, repo_url = search.pick_installed_rock(name:lower(), version, flags["tree"])
+   name, version, repo, repo_url = search.pick_installed_rock(query, flags["tree"])
    if not name then
       return nil, version
    end
-
-   local directory = path.install_dir(name,version,repo)
+   local tree = path.rocks_tree_to_string(repo)
+   local directory = path.install_dir(name, version, repo)
+   local namespace = path.read_namespace(name, version, tree)
    local rockspec_file = path.rockspec_file(name, version, repo)
    local rockspec, err = fetch.load_local_rockspec(rockspec_file)
    if not rockspec then return nil,err end
@@ -98,18 +104,30 @@ function show.command(flags, name, version)
    if not manifest then return nil,err end
    local minfo = manifest.repository[name][version][1]
 
-   if flags["rock-tree"] then util.printout(path.rocks_tree_to_string(repo))
+   if flags["rock-tree"] then util.printout(tree)
+   elseif flags["rock-namespace"] then util.printout(namespace)
    elseif flags["rock-dir"] then util.printout(directory)
    elseif flags["home"] then util.printout(descript.homepage)
    elseif flags["issues"] then util.printout(descript.issues_url)
    elseif flags["labels"] then util.printout(descript.labels and table.concat(descript.labels, "\n"))
    elseif flags["modules"] then util.printout(keys_as_string(minfo.modules, "\n"))
-   elseif flags["deps"] then util.printout(keys_as_string(minfo.dependencies or {}))
+   elseif flags["deps"] then
+      for _, dep in ipairs(rockspec.dependencies) do
+         util.printout(tostring(dep))
+      end
+   elseif flags["build-deps"] then
+      for _, dep in ipairs(rockspec.build_dependencies) do
+         util.printout(tostring(dep))
+      end
+   elseif flags["test-deps"] then
+      for _, dep in ipairs(rockspec.test_dependencies) do
+         util.printout(tostring(dep))
+      end
    elseif flags["rockspec"] then util.printout(rockspec_file)
    elseif flags["mversion"] then util.printout(version)
    else
       util.printout()
-      util.printout(rockspec.package.." "..rockspec.version.." - "..(descript.summary or ""))
+      util.printout((namespace and namespace .."/" or "") .. rockspec.package.." "..rockspec.version.." - "..(descript.summary or ""))
       util.printout()
       if descript.detailed then
          util.printout(format_text(descript.detailed))
@@ -141,13 +159,29 @@ function show.command(flags, name, version)
          print_items(name, version, minfo.modules, "module", repo)
       end
 
+      if #rockspec.build_dependencies > 0 then
+         util.printout()
+         util.printout("Has build dependency on:")
+         for _, dep in ipairs(rockspec.build_dependencies) do
+            util.printout("\t"..tostring(dep).." "..installed_rock_label(dep, flags["tree"]))
+         end
+      end
+
+      if #rockspec.test_dependencies > 0 then
+         util.printout()
+         util.printout("Tests depend on:")
+         for _, dep in ipairs(rockspec.test_dependencies) do
+            util.printout("\t"..tostring(dep).." "..installed_rock_label(dep, flags["tree"]))
+         end
+      end
+
       local direct_deps = {}
       if #rockspec.dependencies > 0 then
          util.printout()
          util.printout("Depends on:")
          for _, dep in ipairs(rockspec.dependencies) do
             direct_deps[dep.name] = true
-            util.printout("\t"..vers.show_dep(dep).." "..installed_rock_label(dep.name, flags["tree"]))
+            util.printout("\t"..tostring(dep).." "..installed_rock_label(dep, flags["tree"]))
          end
       end
       local has_indirect_deps
@@ -159,7 +193,7 @@ function show.command(flags, name, version)
                has_indirect_deps = true
             end
 
-            util.printout("\t"..dep_name.." "..installed_rock_label(dep_name, flags["tree"]))
+            util.printout("\t"..tostring(dep_name).." "..installed_rock_label(queries.new(dep_name), flags["tree"]))
          end
       end
       util.printout()

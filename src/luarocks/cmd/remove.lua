@@ -11,6 +11,7 @@ local search = require("luarocks.search")
 local path = require("luarocks.path")
 local deps = require("luarocks.deps")
 local writer = require("luarocks.manif.writer")
+local queries = require("luarocks.queries")
 
 cmd_remove.help_summary = "Uninstall a rock."
 cmd_remove.help_arguments = "[--force|--force-fast] <name> [<version>]"
@@ -35,6 +36,8 @@ function cmd_remove.command(flags, name, version)
    if type(name) ~= "string" then
       return nil, "Argument missing. "..util.see_help("remove")
    end
+
+   name = util.adjust_name_and_namespace(name, flags)
    
    local deps_mode = flags["deps-mode"] or cfg.deps_mode
    
@@ -50,7 +53,7 @@ function cmd_remove.command(flags, name, version)
 
    local results = {}
    name = name:lower()
-   search.manifest_search(results, cfg.rocks_dir, search.make_query(name, version))
+   search.local_manifest_search(results, cfg.rocks_dir, queries.new(name, version))
    if not results[name] then
       return nil, "Could not find rock '"..name..(version and " "..version or "").."' in "..path.rocks_tree_to_string(cfg.root_dir)
    end

@@ -14,6 +14,7 @@ util.split_string = core.split_string
 util.keys = core.keys
 util.printerr = core.printerr
 util.sortedpairs = core.sortedpairs
+util.warning = core.warning
 
 local unpack = unpack or table.unpack
 
@@ -85,6 +86,7 @@ local supported_flags = {
    ["bin"] = true,
    ["binary"] = true,
    ["branch"] = "<branch-name>",
+   ["build-deps"] = true,
    ["debug"] = true,
    ["deps"] = true,
    ["deps-mode"] = "<mode>",
@@ -96,6 +98,7 @@ local supported_flags = {
    ["help"] = true,
    ["home"] = true,
    ["homepage"] = "\"<url>\"",
+   ["index"] = true,
    ["issues"] = true,
    ["keep"] = true,
    ["labels"] = true,
@@ -113,6 +116,7 @@ local supported_flags = {
    ["lua-libdir"] = true,
    ["modules"] = true,
    ["mversion"] = true,
+   ["namespace"] = "<namespace>",
    ["no-refresh"] = true,
    ["nodeps"] = true,
    ["old-versions"] = true,
@@ -127,6 +131,7 @@ local supported_flags = {
    ["porcelain"] = true,
    ["quick"] = true,
    ["rock-dir"] = true,
+   ["rock-namespace"] = true,
    ["rock-tree"] = true,
    ["rock-trees"] = true,
    ["rockspec"] = true,
@@ -137,6 +142,8 @@ local supported_flags = {
    ["summary"] = "\"<text>\"",
    ["system-config"] = true,
    ["tag"] = "<tag>",
+   ["test-type"] = "<type>",
+   ["temp-key"] = "<key>",
    ["timeout"] = "<seconds>",
    ["to"] = "<path>",
    ["tree"] = "<path>",
@@ -155,13 +162,12 @@ function util.parse_flags(...)
    local flags = {}
    local i = 1
    local out = {}
-   local ignore_flags = false
+   local state = "initial"
    while i <= #args do
       local flag = args[i]:match("^%-%-(.*)")
-      if flag == "--" then
-         ignore_flags = true
-      end
-      if flag and not ignore_flags then
+      if state == "initial" and flag == "" then
+         state = "ignore_flags"
+      elseif state == "initial" and flag then
          local var,val = flag:match("([a-z_%-]*)=(.*)")
          if val then
             local vartype = supported_flags[var]
@@ -200,7 +206,7 @@ function util.parse_flags(...)
                return { ERROR = "Invalid argument: unknown flag --"..var.."." }
             end
          end
-      else
+      elseif state == "ignore_flags" or (state == "initial" and not flag) then
          table.insert(out, args[i])
       end
       i = i + 1
@@ -322,12 +328,6 @@ function util.printout(...)
    io.stdout:write("\n")
 end
 
---- Display a warning message.
--- @param msg string: the warning message
-function util.warning(msg)
-   util.printerr("Warning: "..msg)
-end
-
 function util.title(msg, porcelain, underline)
    if porcelain then return end
    util.printout()
@@ -381,8 +381,7 @@ function util.announce_install(rockspec)
       suffix = " (license: "..rockspec.description.license..")"
    end
 
-   local root_dir = path.root_dir(cfg.rocks_dir)
-   util.printout(rockspec.name.." "..rockspec.version.." is now installed in "..root_dir..suffix)
+   util.printout(rockspec.name.." "..rockspec.version.." is now installed in "..path.root_dir(cfg.root_dir)..suffix)
    util.printout()
 end
 
@@ -396,7 +395,7 @@ local function collect_rockspecs(versions, paths, unnamed_paths, subdir)
    local fs = require("luarocks.fs")
    local dir = require("luarocks.dir")
    local path = require("luarocks.path")
-   local vers = require("luarocks.vers")
+   local vers = require("luarocks.core.vers")
 
    if fs.is_dir(subdir) then
       for file in fs.dir(subdir) do
@@ -456,6 +455,41 @@ end
 -- @return string: A quoted string, such as '"hello"'
 function util.LQ(s)
    return ("%q"):format(s)
+end
+
+--- Normalize the --namespace flag and the user/rock syntax for namespaces.
+-- If a namespace is given in user/rock syntax, update the --namespace flag;
+-- If a namespace is given in --namespace flag, update the user/rock syntax.
+-- In case of conflicts, the user/rock syntax takes precedence.
+function util.adjust_name_and_namespace(ns_name, flags)
+   assert(type(ns_name) == "string" or not ns_name)
+   assert(type(flags) == "table")
+
+   if not ns_name then
+      return
+   elseif ns_name:match("%.rockspec$") or ns_name:match("%.rock$") then
+      return ns_name
+   end
+
+   local name, namespace = util.split_namespace(ns_name)
+   if namespace then
+      flags["namespace"] = namespace
+   end
+   if flags["namespace"] then
+      name = flags["namespace"] .. "/" .. name
+   end
+   return name:lower()
+end
+
+-- Split name and namespace of a package name.
+-- @param ns_name a name that may be in "namespace/name" format
+-- @return string, string? - name and optionally a namespace
+function util.split_namespace(ns_name)
+   local p1, p2 = ns_name:match("^([^/]+)/([^/]+)$")
+   if p1 then
+      return p2, p1
+   end
+   return ns_name
 end
 
 return util

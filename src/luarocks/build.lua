@@ -156,12 +156,15 @@ end
 -- "all" for all trees, "order" for all trees with priority >= the current default,
 -- "none" for no trees.
 -- @param build_only_deps boolean: true to build the listed dependencies only.
+-- @param namespace string?: a namespace for the rockspec
 -- @return (string, string) or (nil, string, [string]): Name and version of
 -- installed rock if succeeded or nil and an error message followed by an error code.
-function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_mode, build_only_deps)
+function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_mode, build_only_deps, namespace)
    assert(type(rockspec_file) == "string")
    assert(type(need_to_fetch) == "boolean")
+   assert(type(namespace) == "string" or not namespace)
 
+   local ok
    local rockspec, err, errcode = fetch.load_rockspec(rockspec_file)
    if err then
       return nil, err, errcode
@@ -171,9 +174,8 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
       return nil, "Rockspec error: build type not specified"
    end
 
-   local ok
    if not build_only_deps then
-      ok, err, errcode = deps.check_external_deps(rockspec, "build")
+      local ok, err, errcode = deps.check_external_deps(rockspec, "build")
       if err then
          return nil, err, errcode
       end
@@ -182,7 +184,16 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
    if deps_mode == "none" then
       util.warning("skipping dependency checks.")
    else
-      local ok, err, errcode = deps.fulfill_dependencies(rockspec, deps_mode)
+      if not build_only_deps then
+         if next(rockspec.build_dependencies) then
+            local ok, err, errcode = deps.fulfill_dependencies(rockspec, "build_dependencies", deps_mode)
+            if err then
+               return nil, err, errcode
+            end
+         end
+      end
+
+      local ok, err, errcode = deps.fulfill_dependencies(rockspec, "dependencies", deps_mode)
       if err then
          return nil, err, errcode
       end
@@ -317,6 +328,9 @@ function build.build_rockspec(rockspec_file, need_to_fetch, minimal_mode, deps_m
    end
 
    ok, err = writer.make_rock_manifest(name, version)
+   if err then return nil, err end
+
+   ok, err = writer.make_namespace_file(name, version, namespace)
    if err then return nil, err end
 
    ok, err = repos.deploy_files(name, version, repos.should_wrap_bin_scripts(rockspec), deps_mode)
